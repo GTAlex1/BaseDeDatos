@@ -4,24 +4,23 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="pages.css">
 </head><body>
-<div id="app">
-<header>
-<strong style="font-size:16px">DiagramaDB</strong>
-<div class="seg" id="tabs"></div>
-<div style="flex:1"></div>
-<span class="lbl" style="margin:0">Ayuda</span>
-<div class="seg" id="lv"></div>
-<span id="cloud" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"></span>
-<span id="adm"></span>
-<button class="btn" data-s="open">Sugerencias</button>
-<button class="btn pri" data-a="io">Importar / exportar</button>
-</header>
-<div id="bar"></div>
-<div id="main"><div id="cw"><svg id="cv"></svg></div><aside id="side"></aside></div>
+<div class="top">
+<a class="brand" href="index.html"><img src="favicon.svg" alt="" width="28" height="28"><span>DiagramaDB</span></a>
+<div class="sp"></div>
+<button class="btn" id="sg">Sugerencias</button>
+<span id="acct"></span>
 </div>
+<main class="wrap">
+<div class="head"><div><h1>Tus diagramas</h1><p class="mu">Entidad-relación, esquema relacional y normalización en un mismo sitio.</p></div><button class="btn pri" id="nw2">Nuevo diagrama</button></div>
+<div class="note" id="note" hidden>Tus diagramas se guardan solo en este navegador. <button class="lk" id="li2">Inicia sesión</button> para guardarlos en la nube y abrirlos desde cualquier dispositivo.</div>
+<input class="search" id="qs" type="search" placeholder="Buscar por título" aria-label="Buscar por título">
+<div class="grid" id="grid"></div>
+<p class="mu" id="empty" hidden style="margin-top:20px">Todavía no tienes diagramas. Crea el primero con «Nuevo diagrama».</p>
+</main>
 <div id="menu"></div><div id="dlg"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="app.js"></script>
-<script src="sugerencias.js"></script>
+<script src="store.js"></script>
+<script src="home.js"></script>
 </body></html>

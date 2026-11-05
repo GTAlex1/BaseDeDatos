@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Editor · DiagramaDB</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="pages.css">
+</head><body>
+<div id="app">
+<header>
+<a class="back" id="bk" href="index.html">← Diagramas</a>
+<input class="ttl" id="ttl" maxlength="200" aria-label="Título del diagrama">
+<span class="mu" id="st"></span>
+<div class="seg" id="tabs"></div>
+<div style="flex:1"></div>
+<span class="lbl" style="margin:0">Ayuda</span>
+<div class="seg" id="lv"></div>
+<span id="cloud" hidden></span>
+<button class="btn pri" data-a="io">Importar / exportar</button>
+</header>
+<div id="bar"></div>
+<div id="main"><div id="cw"><svg id="cv"></svg></div><aside id="side"></aside></div>
+</div>
+<div id="menu"></div><div id="dlg"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="store.js"></script>
+<script src="editor-boot.js"></script>
+</body></html>
