@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><title>DiagramaDB</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="styles.css">
 </head><body>
@@ -12,6 +13,8 @@
 <span class="lbl" style="margin:0">Ayuda</span>
 <div class="seg" id="lv"></div>
 <span id="cloud" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"></span>
+<span id="adm"></span>
+<button class="btn" data-s="open">Sugerencias</button>
 <button class="btn pri" data-a="io">Importar / exportar</button>
 </header>
 <div id="bar"></div>
@@ -20,4 +23,5 @@
 <div id="menu"></div><div id="dlg"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="app.js"></script>
+<script src="sugerencias.js"></script>
 </body></html>
