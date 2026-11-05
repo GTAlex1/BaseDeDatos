@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>DiagramaDB</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head><body>
+<div id="app">
+<header>
+<strong style="font-size:16px">DiagramaDB</strong>
+<div class="seg" id="tabs"></div>
+<div style="flex:1"></div>
+<span class="lbl" style="margin:0">Ayuda</span>
+<div class="seg" id="lv"></div>
+<span id="cloud" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"></span>
+<button class="btn pri" data-a="io">Importar / exportar</button>
+</header>
+<div id="bar"></div>
+<div id="main"><div id="cw"><svg id="cv"></svg></div><aside id="side"></aside></div>
+</div>
+<div id="menu"></div><div id="dlg"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="app.js"></script>
+</body></html>
