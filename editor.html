@@ -5,21 +5,24 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="pages.css">
+<link rel="stylesheet" href="editor.css">
 </head><body>
 <div id="app">
-<header>
-<a class="back" id="bk" href="index.html">← Diagramas</a>
+<header class="hd">
+<div class="hl">
+<a class="back" id="bk" href="index.html" aria-label="Volver a mis diagramas" title="Volver a mis diagramas"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
 <input class="ttl" id="ttl" maxlength="200" aria-label="Título del diagrama">
-<span class="mu" id="st"></span>
+<span class="st" id="st"></span>
+</div>
 <div class="seg" id="tabs"></div>
-<div style="flex:1"></div>
+<div class="hr">
 <span class="lbl" style="margin:0">Ayuda</span>
 <div class="seg" id="lv"></div>
 <span id="cloud" hidden></span>
 <button class="btn pri" data-a="io">Importar / exportar</button>
+</div>
 </header>
-<div id="bar"></div>
-<div id="main"><div id="cw"><svg id="cv"></svg></div><aside id="side"></aside></div>
+<div id="main"><div id="cw"><div id="bar"></div><svg id="cv"></svg></div><aside id="side"></aside></div>
 </div>
 <div id="menu"></div><div id="dlg"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
