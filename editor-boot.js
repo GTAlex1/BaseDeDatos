@@ -8,8 +8,8 @@
  if(!doc||!d||!d.er||!d.rel){document.body.innerHTML='<p class="mu" style="padding:24px">No se encontró este diagrama o no tienes acceso. <a href="index.html">Volver a mis diagramas</a></p>';return}
  q('#ttl').value=doc.title;document.title=doc.title+' · DiagramaDB';
  /* app.js arranca leyendo esta copia de trabajo */
- localStorage.setItem('ddb-v1',JSON.stringify({level:d.level||'verify',tab:'er',sel:null,er:d.er,rel:d.rel,exc:d.exc||[]}));
- const cur=()=>JSON.stringify({level:S.level,er:S.er,rel:S.rel,exc:S.exc}),st=t=>{q('#st').textContent=t},ok=()=>st(DB.isLocal(id)?'Guardado en este navegador':'Guardado en la nube');
+ localStorage.setItem('ddb-v1',JSON.stringify({level:d.level||'verify',tab:'er',sel:null,er:d.er,rel:d.rel,exc:d.exc||[],norm:d.norm}));
+ const cur=()=>JSON.stringify({level:S.level,er:S.er,rel:S.rel,exc:S.exc,norm:S.norm}),st=t=>{q('#st').textContent=t},ok=()=>st(DB.isLocal(id)?'Guardado en este navegador':'Guardado en la nube');
  let last='',busy=false;
  async function flush(){
   if(typeof S==='undefined')return;
@@ -21,7 +21,9 @@
  q('#ttl').onchange=async()=>{const t=q('#ttl').value.trim()||'Sin título';q('#ttl').value=t;document.title=t+' · DiagramaDB';st('Guardando…');try{await DB.rename(id,t);ok()}catch(e){st('No se pudo guardar')}};
  q('#bk').onclick=async e=>{e.preventDefault();await flush();location.href='index.html'};
  addEventListener('pagehide',flush);
- const s=document.createElement('script');s.src='app.js';
- s.onload=()=>{last=cur();ok();setInterval(flush,1200)};
- document.body.appendChild(s);
+ const add=src=>new Promise(r=>{const e=document.createElement('script');e.src=src;e.onload=r;e.onerror=r;document.body.appendChild(e)});
+ await add('app.js');
+ await add('normalizacion-core.js');
+ await add('normalizacion.js');
+ last=cur();ok();setInterval(flush,1200);
 })();
