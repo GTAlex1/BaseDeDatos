@@ -1,0 +1,27 @@
+name: Mantener Supabase activo
+
+# Supabase pausa los proyectos gratuitos tras 7 días sin actividad.
+# Este flujo hace una consulta ligera a la base de datos dos veces por semana.
+on:
+  schedule:
+    - cron: '17 8 * * 1,4'   # lunes y jueves, 08:17 UTC
+  workflow_dispatch:         # también se puede lanzar a mano desde la pestaña Actions
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Consultar la base de datos
+        env:
+          SUPABASE_URL: https://bgnntvhlyuslrvkkejic.supabase.co
+          # Clave anon: es pública por diseño (la misma que usa la página).
+          SUPABASE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbm50dmhseXVzbHJ2a2tlamljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2OTQzOTUsImV4cCI6MjEwOTI3MDM5NX0.L7POvQFo8BbGydWRgw1QYUdq9Cr-uGz2KHBjJLequJs
+        run: |
+          curl --fail --silent --show-error --retry 3 --retry-delay 10 --max-time 30 \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            -o /dev/null -w "Respuesta HTTP %{http_code}\n" \
+            "$SUPABASE_URL/rest/v1/diagrams?select=id&limit=1"
