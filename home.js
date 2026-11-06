@@ -28,14 +28,14 @@ function render(){
  const L=docs.filter(d=>String(d.title).toLowerCase().includes(qy));
  let h='<button class="card new" id="nw"><span class="plus">+</span><b>Nuevo diagrama</b><small>Empieza con un lienzo en blanco</small></button>';
  L.forEach(d=>{const u='editor.html?id='+encodeURIComponent(d.id);
-  h+=`<article class="card"><a class="th" href="${esc(u)}" tabindex="-1" aria-hidden="true">${thumb(d.data||{})||'<span class="blank">Vacío</span>'}</a><div class="meta"><a class="tt" href="${esc(u)}">${esc(d.title)}</a><button class="kb" data-m="${esc(d.id)}" aria-label="Más opciones">⋯</button></div><div class="sub">${ago(d.updated_at)}${d.local?' · <span class="pill">Solo en este navegador</span>':''}</div></article>`});
+  h+=`<article class="card"><a class="th" href="${esc(u)}" tabindex="-1" aria-hidden="true">${thumb(d.thumb||d.data||{})||'<span class="blank">Vacío</span>'}</a><div class="meta"><a class="tt" href="${esc(u)}">${esc(d.title)}</a><button class="kb" data-m="${esc(d.id)}" aria-label="Más opciones">⋯</button></div><div class="sub">${ago(d.updated_at)}${d.local?' · <span class="pill">Solo en este navegador</span>':''}</div></article>`});
  $('#grid').innerHTML=h;$('#empty').hidden=docs.length>0}
 async function refresh(){try{docs=await DB.list()}catch(e){toast(e.message||'No se pudieron cargar los diagramas.');docs=[]}render()}
 function newDoc(){ask('Nombre del diagrama','Sin título',async t=>{try{const id=await DB.create(t,DB.blank());location.href='editor.html?id='+encodeURIComponent(id)}catch(e){toast(e.message)}})}
 function cardMenu(id,btn){const d=docs.find(x=>x.id==id);if(!d)return;const r=btn.getBoundingClientRect(),it=[],run=f=>async()=>{try{await f()}catch(x){toast(x.message)}refresh()};
  it.push(['Abrir',()=>{location.href='editor.html?id='+encodeURIComponent(id)}]);
  it.push(['Renombrar',()=>ask('Nombre del diagrama',d.title,t=>run(()=>DB.rename(id,t))())]);
- it.push(['Duplicar',run(()=>DB.create(d.title+' (copia)',JSON.parse(JSON.stringify(d.data)),d.local))]);
+ it.push(['Duplicar',run(async()=>{const f=await DB.get(id);if(f)await DB.create(d.title+' (copia)',f.data,d.local)})]);
  if(d.local&&DB.user)it.push(['Subir a la nube',run(()=>DB.toCloud(id))]);
  it.push(['Eliminar',()=>confirmDlg('¿Eliminar «'+d.title+'»? No se puede deshacer.','Eliminar',run(()=>DB.remove(id))),1]);
  menu(r.left,r.bottom+4,it)}
