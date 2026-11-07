@@ -9,13 +9,17 @@ const DB=(()=>{
  db.applyTheme=t=>{const r=document.documentElement;if(t==='light'||t==='dark')r.setAttribute('data-theme',t);else r.removeAttribute('data-theme')};
  try{db.applyTheme(localStorage.getItem(TK))}catch(e){}
  const keepTheme=t=>{try{localStorage.setItem(TK,t)}catch(e){}db.applyTheme(t)};
- const PF='nick,tag,theme,avatar_path';
+ const PF='nick,tag,theme,avatar_path,auto_delete';
  const loadMe=async()=>{db.profile=null;db.admin=false;if(!c||!db.user)return;
   try{const[p,a]=await Promise.all([c.from('profiles').select(PF).eq('id',db.user.id).maybeSingle(),c.rpc('is_admin')]);
    db.profile=p.data||null;db.admin=a.data===true;if(db.profile)keepTheme(db.profile.theme)}catch(e){}};
  db.setProfile=async(nick,tag,theme)=>{
   const r=await c.from('profiles').upsert({id:db.user.id,nick,tag,theme}).select(PF).single();
   if(r.error)throw r.error;db.profile=r.data;keepTheme(theme);return r.data};
+ /* Caducidad: sin abrir 2 meses → papelera (si el ajuste está activo); 500 días → papelera siempre; los favoritos se libran. En papelera, 1 mes. La limpieza real la hace la base de datos cada noche. */
+ db.autoDel=()=>db.profile?db.profile.auto_delete!==false:true;
+ db.setAuto=async v=>{const r=await c.from('profiles').update({auto_delete:v}).eq('id',db.user.id);if(r.error)throw r.error;db.profile.auto_delete=v};
+ db.expiry=d=>{if(d.favorite||!d.last_opened_at)return null;const t=new Date(d.last_opened_at),a=new Date(t);a.setDate(a.getDate()+500);if(db.autoDel()){const m=new Date(t);m.setMonth(m.getMonth()+2);return m<a?m:a}return a};
  /* Miniatura: solo posiciones y tipos, sin nombres ni notas. Así la portada no descarga el diagrama entero. */
  const mkThumb=d=>{const E=d.er||{},R=d.rel||{};return{er:{ents:(E.ents||[]).map(n=>({id:n.id,x:n.x,y:n.y,attrs:(n.attrs||[]).map(a=>({k:a.k}))})),rels:(E.rels||[]).map(n=>({id:n.id,x:n.x,y:n.y})),links:(E.links||[]).map(l=>({e:l.e,r:l.r}))},rel:{tabs:(R.tabs||[]).map(t=>({x:t.x,y:t.y,rows:(t.rows||[]).map(()=>0)}))}}};
  db.isLocal=isL;
@@ -24,12 +28,15 @@ const DB=(()=>{
  if(c)c.auth.onAuthStateChange((_e,s)=>{db.user=s?s.user:null;setTimeout(async()=>{await loadMe();if(db.onauth)db.onauth()},0)});
  db.list=async()=>{
   const out=Object.entries(rd()).map(([id,d])=>({id,title:d.title,updated_at:d.updated_at,data:d.data,local:true}));
-  if(c&&db.user){const r=await c.from('diagrams').select('id,title,updated_at,thumb').order('updated_at',{ascending:false});if(r.error)throw r.error;r.data.forEach(d=>out.push(Object.assign(d,{local:false})))}
+  if(c&&db.user){const r=await c.from('diagrams').select('id,title,updated_at,thumb,favorite,last_opened_at').is('deleted_at',null).order('updated_at',{ascending:false});if(r.error)throw r.error;r.data.forEach(d=>out.push(Object.assign(d,{local:false})))}
   return out.sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at))};
  db.get=async id=>{
   if(isL(id)){const d=rd()[id];return d?{id,title:d.title,data:d.data}:null}
   if(!c||!db.user)return null;
-  const r=await c.from('diagrams').select('id,title,data').eq('id',id).single();return r.error?null:r.data};
+  const r=await c.from('diagrams').select('id,title,data').eq('id',id).is('deleted_at',null).single();
+  if(r.error)return null;
+  c.from('diagrams').update({last_opened_at:now()}).eq('id',id).then(()=>{},()=>{});
+  return r.data};
  db.create=async(title,data,local)=>{
   if(!local&&c&&db.user){const r=await c.from('diagrams').insert({title,kind:'er',data,thumb:mkThumb(data)}).select('id').single();if(r.error)throw r.error;return r.data.id}
   const id='l-'+Math.random().toString(36).slice(2,10),o=rd();o[id]={title,updated_at:now(),data};wr(o);return id};
@@ -39,9 +46,14 @@ const DB=(()=>{
  db.rename=async(id,title)=>{
   if(isL(id)){const o=rd();if(o[id]){o[id].title=title;o[id].updated_at=now();wr(o)}return}
   const r=await c.from('diagrams').update({title}).eq('id',id);if(r.error)throw r.error};
+ /* En la nube, eliminar = mandar a la papelera. */
  db.remove=async id=>{
   if(isL(id)){const o=rd();delete o[id];wr(o);return}
-  const r=await c.from('diagrams').delete().eq('id',id);if(r.error)throw r.error};
+  const r=await c.from('diagrams').update({deleted_at:now()}).eq('id',id);if(r.error)throw r.error};
+ db.trash=async()=>{const r=await c.from('diagrams').select('id,title,deleted_at').not('deleted_at','is',null).order('deleted_at',{ascending:false});if(r.error)throw r.error;return r.data};
+ db.restore=async id=>{const r=await c.from('diagrams').update({deleted_at:null,last_opened_at:now()}).eq('id',id);if(r.error)throw r.error};
+ db.purge=async id=>{const r=await c.from('diagrams').delete().eq('id',id);if(r.error)throw r.error};
+ db.setFav=async(id,v)=>{const r=await c.from('diagrams').update({favorite:v}).eq('id',id);if(r.error)throw r.error};
  db.toCloud=async id=>{const d=await db.get(id);if(!d)return;await db.create(d.title,d.data);await db.remove(id)};
  db.url=url;
  return db})();
