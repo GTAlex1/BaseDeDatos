@@ -27,9 +27,9 @@ function accountDlg(){const p=DB.profile||{nick:'',tag:'',theme:'auto'},d=$('#dl
   catch(e){m(e.code=='23505'?'Ese apodo con esa etiqueta ya está en uso.':(e.message||'No se pudo guardar.'));$('#asv').disabled=false}}}
 function acct(){const a=$('#acct'),u=DB.user;$('#note').hidden=!DB.client||!!u;
  if(!DB.client){a.innerHTML='';return}
- a.innerHTML=u?(DB.admin?'<button class="btn" id="stg" style="margin-right:8px">Almacenamiento</button>':'')+'<button class="av" id="av" aria-label="Cuenta"></button>':'<button class="btn" id="li">Iniciar sesión</button>';
- if(u){const b=$('#av'),p=DB.profile;paintAv(b,p,u);if(DB.admin)$('#stg').onclick=storageDlg;
-  b.onclick=()=>{const r=b.getBoundingClientRect();menu(r.right-210,r.bottom+6,[[p?p.nick+'#'+p.tag+' · Mi cuenta':'Mi cuenta',accountDlg],['Cerrar sesión',async()=>{await DB.client.auth.signOut()}]])}}
+ a.innerHTML=u?'<button class="av" id="av" aria-label="Cuenta"></button>':'<button class="btn" id="li">Iniciar sesión</button>';
+ if(u){const b=$('#av'),p=DB.profile;paintAv(b,p,u);
+  b.onclick=()=>{const r=b.getBoundingClientRect(),it=[[p?p.nick+'#'+p.tag+' · Mi cuenta':'Mi cuenta',accountDlg]];if(DB.admin)it.push(['Almacenamiento',storageDlg]);it.push(['Cerrar sesión',async()=>{await DB.client.auth.signOut()}]);menu(r.right-210,r.bottom+6,it)}}
  else $('#li').onclick=loginDlg}
 async function storageDlg(){const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl">Almacenamiento</p><div id="sb" class="mu">Cargando…</div><div class="row"><button class="btn" id="sx">Cerrar</button></div></div>';d.style.display='flex';$('#sx').onclick=shut;
  const r=await DB.client.rpc('admin_storage'),B=$('#sb');if(r.error){B.textContent=r.error.message;return}
