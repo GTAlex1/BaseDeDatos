@@ -1,7 +1,33 @@
-/* Cuenta: foto de perfil, apodo#etiqueta, tema y, para el admin, panel de almacenamiento. Sustituye a accountDlg y acct de home.js. */
+/* Cuenta: foto de perfil (con recorte), apodo#etiqueta, tema y, para el admin, panel de almacenamiento. Sustituye a accountDlg y acct de home.js. */
 const MB=1048576,fmt=b=>b>=MB*1024?(b/MB/1024).toFixed(2)+' GB':b>=MB?(b/MB).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
 DB.avatarUrl=p=>p?DB.url+'/storage/v1/object/public/avatars/'+p:'';
-function resizeAvatar(file){return new Promise((ok,ko)=>{const im=new Image(),u=URL.createObjectURL(file);im.onload=()=>{URL.revokeObjectURL(u);const s=Math.min(im.width,im.height),c=document.createElement('canvas');c.width=c.height=256;c.getContext('2d').drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,256,256);c.toBlob(b=>{if(b&&b.type=='image/webp')return ok(b);c.toBlob(j=>j?ok(j):ko(new Error('No se pudo procesar la imagen.')),'image/jpeg',.85)},'image/webp',.85)};im.onerror=()=>ko(new Error('Imagen no válida.'));im.src=u})}
+/* Recorte: arrastrar, zoom con deslizador, rueda o pellizco. Devuelve un blob de 256x256 (WebP o JPEG) o null si se cancela. */
+function cropDlg(file){return new Promise((ok,ko)=>{
+ const V=280,im=new Image(),url=URL.createObjectURL(file);
+ im.onerror=()=>{URL.revokeObjectURL(url);ko(new Error('Imagen no válida.'))};
+ im.onload=()=>{
+  const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:16px';
+  o.innerHTML='<div class="box" style="max-width:340px;width:100%"><p class="lbl">Ajusta tu foto</p><canvas id="cv" width="280" height="280" style="width:100%;max-width:280px;aspect-ratio:1;align-self:center;touch-action:none;cursor:grab;border-radius:8px"></canvas><input id="cz" type="range" min="1" max="5" step="0.01" value="1" aria-label="Zoom"><p class="mu">Arrastra para mover y usa el zoom para acercar.</p><div class="row"><button class="btn" id="cc">Cancelar</button><button class="btn pri" id="cu">Usar foto</button></div></div>';
+  document.body.appendChild(o);
+  const cv=o.querySelector('#cv'),g=cv.getContext('2d'),zs=o.querySelector('#cz'),min=V/Math.min(im.width,im.height),P=new Map();
+  let z=1,ox=(V-im.width*min)/2,oy=(V-im.height*min)/2,d0=0;
+  const sc=()=>min*z,clamp=()=>{ox=Math.min(0,Math.max(V-im.width*sc(),ox));oy=Math.min(0,Math.max(V-im.height*sc(),oy))};
+  const draw=()=>{g.clearRect(0,0,V,V);g.drawImage(im,ox,oy,im.width*sc(),im.height*sc());g.fillStyle='rgba(0,0,0,.55)';g.beginPath();g.rect(0,0,V,V);g.arc(V/2,V/2,V/2-2,0,Math.PI*2,true);g.fill('evenodd')};
+  const zoom=n=>{n=Math.min(5,Math.max(1,n));const k=n/z,c=V/2;ox=c-(c-ox)*k;oy=c-(c-oy)*k;z=n;zs.value=z;clamp();draw()};
+  const dist=()=>{const[a,b]=[...P.values()];return Math.hypot(a[0]-b[0],a[1]-b[1])};
+  cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);P.set(e.pointerId,[e.clientX,e.clientY]);if(P.size==2)d0=dist()};
+  cv.onpointermove=e=>{if(!P.has(e.pointerId))return;const p=P.get(e.pointerId),f=V/cv.clientWidth;
+   if(P.size==1){ox+=(e.clientX-p[0])*f;oy+=(e.clientY-p[1])*f;P.set(e.pointerId,[e.clientX,e.clientY]);clamp();draw()}
+   else{P.set(e.pointerId,[e.clientX,e.clientY]);const d=dist();if(d0)zoom(z*d/d0);d0=d}};
+  cv.onpointerup=cv.onpointercancel=e=>{P.delete(e.pointerId);d0=0};
+  cv.onwheel=e=>{e.preventDefault();zoom(z*(e.deltaY<0?1.1:1/1.1))};
+  zs.oninput=()=>zoom(+zs.value);
+  const end=()=>{o.remove();URL.revokeObjectURL(url)};
+  o.querySelector('#cc').onclick=()=>{end();ok(null)};
+  o.querySelector('#cu').onclick=()=>{const out=document.createElement('canvas');out.width=out.height=256;const s=sc();out.getContext('2d').drawImage(im,-ox/s,-oy/s,V/s,V/s,0,0,256,256);end();
+   out.toBlob(b=>{if(b&&b.type=='image/webp')return ok(b);out.toBlob(j=>j?ok(j):ko(new Error('No se pudo procesar la imagen.')),'image/jpeg',.85)},'image/webp',.85)};
+  draw()};
+ im.src=url})}
 /* Borra de la carpeta del usuario todo lo que no sea la foto actual (la anterior y cualquier resto). */
 DB.cleanAvatars=async keep=>{const st=DB.client.storage.from('avatars'),uid=DB.user.id,l=await st.list(uid,{limit:100});
  if(l.error)return;const old=l.data.map(f=>uid+'/'+f.name).filter(p=>p!==keep);if(old.length)await st.remove(old)};
@@ -19,7 +45,7 @@ function accountDlg(){const p=DB.profile||{nick:'',tag:'',theme:'auto'},d=$('#dl
  const mark=()=>document.querySelectorAll('#ts button').forEach(b=>b.classList.toggle('on',b.dataset.t==th));mark();
  document.querySelectorAll('#ts button').forEach(b=>b.onclick=()=>{th=b.dataset.t;DB.applyTheme(th);mark()});
  $('#aph').onclick=()=>$('#apf').click();
- $('#apf').onchange=async e=>{const f=e.target.files[0];if(!f)return;m('Subiendo…');try{await DB.setAvatar(await resizeAvatar(f));m('');pv();acct()}catch(x){m(x.message||'No se pudo subir la foto.')}};
+ $('#apf').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const b=await cropDlg(f);if(!b)return;m('Subiendo…');await DB.setAvatar(b);m('');pv();acct()}catch(x){m(x.message||'No se pudo subir la foto.')}};
  $('#apx').onclick=async()=>{try{await DB.clearAvatar();pv();acct()}catch(x){m(x.message)}};
  $('#acx').onclick=()=>{DB.applyTheme(p.theme);shut()};
  $('#asv').onclick=async()=>{const n=$('#anick').value.trim(),t=$('#atag').value.trim();
