@@ -9,11 +9,12 @@ const DB=(()=>{
  db.applyTheme=t=>{const r=document.documentElement;if(t==='light'||t==='dark')r.setAttribute('data-theme',t);else r.removeAttribute('data-theme')};
  try{db.applyTheme(localStorage.getItem(TK))}catch(e){}
  const keepTheme=t=>{try{localStorage.setItem(TK,t)}catch(e){}db.applyTheme(t)};
+ const PF='nick,tag,theme,avatar_path';
  const loadMe=async()=>{db.profile=null;db.admin=false;if(!c||!db.user)return;
-  try{const[p,a]=await Promise.all([c.from('profiles').select('nick,tag,theme').eq('id',db.user.id).maybeSingle(),c.rpc('is_admin')]);
+  try{const[p,a]=await Promise.all([c.from('profiles').select(PF).eq('id',db.user.id).maybeSingle(),c.rpc('is_admin')]);
    db.profile=p.data||null;db.admin=a.data===true;if(db.profile)keepTheme(db.profile.theme)}catch(e){}};
  db.setProfile=async(nick,tag,theme)=>{
-  const r=await c.from('profiles').upsert({id:db.user.id,nick,tag,theme}).select('nick,tag,theme').single();
+  const r=await c.from('profiles').upsert({id:db.user.id,nick,tag,theme}).select(PF).single();
   if(r.error)throw r.error;db.profile=r.data;keepTheme(theme);return r.data};
  /* Miniatura: solo posiciones y tipos, sin nombres ni notas. Así la portada no descarga el diagrama entero. */
  const mkThumb=d=>{const E=d.er||{},R=d.rel||{};return{er:{ents:(E.ents||[]).map(n=>({id:n.id,x:n.x,y:n.y,attrs:(n.attrs||[]).map(a=>({k:a.k}))})),rels:(E.rels||[]).map(n=>({id:n.id,x:n.x,y:n.y})),links:(E.links||[]).map(l=>({e:l.e,r:l.r}))},rel:{tabs:(R.tabs||[]).map(t=>({x:t.x,y:t.y,rows:(t.rows||[]).map(()=>0)}))}}};
@@ -42,4 +43,5 @@ const DB=(()=>{
   if(isL(id)){const o=rd();delete o[id];wr(o);return}
   const r=await c.from('diagrams').delete().eq('id',id);if(r.error)throw r.error};
  db.toCloud=async id=>{const d=await db.get(id);if(!d)return;await db.create(d.title,d.data);await db.remove(id)};
+ db.url=url;
  return db})();
