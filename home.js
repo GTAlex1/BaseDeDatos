@@ -1,5 +1,5 @@
 /* Portada: lista de diagramas, crear, abrir, renombrar, duplicar y borrar. */
-const $=q=>document.querySelector(q),ADMIN_ID='1610b5c9-9d5d-4c44-8f0c-3d98b93976ec';
+const $=q=>document.querySelector(q);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let docs=[],qy='';
 const shut=()=>{$('#dlg').style.display='none'};
@@ -39,24 +39,42 @@ function cardMenu(id,btn){const d=docs.find(x=>x.id==id);if(!d)return;const r=bt
  if(d.local&&DB.user)it.push(['Subir a la nube',run(()=>DB.toCloud(id))]);
  it.push(['Eliminar',()=>confirmDlg('¿Eliminar «'+d.title+'»? No se puede deshacer.','Eliminar',run(()=>DB.remove(id))),1]);
  menu(r.left,r.bottom+4,it)}
-function loginDlg(){const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl">Cuenta</p><input id="em" type="email" placeholder="Correo" autocomplete="email"><input id="pw" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password"><div class="row"><button class="btn" id="lc">Cancelar</button><button class="btn" id="su">Crear cuenta</button><button class="btn pri" id="si">Entrar</button></div><p class="mu" id="lm"></p></div>';d.style.display='flex';$('#em').focus();
- $('#lc').onclick=shut;const c=DB.client,cr=()=>({email:$('#em').value.trim(),password:$('#pw').value}),m=t=>{$('#lm').textContent=t};
+const EYE='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>',EYE0=EYE+'</svg>',EYE1=EYE+'<path d="M3 3l18 18"/></svg>';
+const ERR={'Invalid login credentials':'Correo o contraseña incorrectos.','Email not confirmed':'Debes confirmar tu correo antes de entrar.','User already registered':'Ese correo ya tiene cuenta.'};
+function loginDlg(){const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl">Cuenta</p><button class="btn" id="gg">Continuar con Google</button><p class="mu" style="text-align:center">o con tu correo</p><input id="em" type="email" placeholder="Correo" autocomplete="email"><div style="position:relative;display:flex"><input id="pw" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password" style="flex:1;min-width:0;padding-right:46px"><button type="button" id="eye" aria-label="Mostrar contraseña" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--mu);cursor:pointer;min-width:38px;min-height:38px;display:grid;place-items:center"></button></div><div class="row"><button class="btn" id="lc">Cancelar</button><button class="btn" id="su">Crear cuenta</button><button class="btn pri" id="si">Entrar</button></div><p class="mu" id="lm"></p></div>';d.style.display='flex';$('#em').focus();
+ $('#lc').onclick=shut;const c=DB.client,cr=()=>({email:$('#em').value.trim(),password:$('#pw').value}),m=t=>{$('#lm').textContent=ERR[t]||t};
+ const eye=$('#eye'),pw=$('#pw'),sh=()=>{const v=pw.type=='text';eye.innerHTML=v?EYE1:EYE0;eye.setAttribute('aria-label',v?'Ocultar contraseña':'Mostrar contraseña')};sh();
+ eye.onclick=()=>{pw.type=pw.type=='text'?'password':'text';sh();pw.focus()};
+ pw.onkeydown=e=>{if(e.key=='Enter')$('#si').click()};
+ $('#gg').onclick=async()=>{const{error}=await c.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)m(error.message)};
  $('#si').onclick=async()=>{const{error}=await c.auth.signInWithPassword(cr());if(error)m(error.message);else{shut();toast('Sesión iniciada.')}};
  $('#su').onclick=async()=>{const{data,error}=await c.auth.signUp(cr());if(error)m(error.message);else if(!data.session)m('Cuenta creada. Revisa tu correo para confirmarla y luego pulsa Entrar.');else{shut();toast('Cuenta creada.')}}}
+function accountDlg(){const p=DB.profile||{nick:'',tag:'',theme:'auto'},d=$('#dlg');let th=p.theme;
+ d.innerHTML='<div class="box"><p class="lbl">Mi cuenta</p><p class="mu" id="ae"></p><div style="display:flex;gap:8px;align-items:center"><input id="anick" maxlength="20" placeholder="Apodo" autocomplete="off" style="flex:1;min-width:0"><b>#</b><input id="atag" maxlength="8" placeholder="Etiqueta" autocomplete="off" style="width:110px"></div><p class="mu">Apodo de 2 a 20 caracteres, sin espacios ni #. Etiqueta de hasta 8 letras o números (mayúsculas y minúsculas cuentan distinto). La combinación debe ser única.</p><p class="lbl" style="margin-top:4px">Tema</p><div class="seg" id="ts"><button data-t="auto">Automático</button><button data-t="light">Claro</button><button data-t="dark">Oscuro</button></div><div class="row"><button class="btn" id="acx">Cancelar</button><button class="btn pri" id="asv">Guardar</button></div><p class="mu" id="am"></p></div>';d.style.display='flex';
+ $('#ae').textContent=(DB.user&&DB.user.email)||'';$('#anick').value=p.nick;$('#atag').value=p.tag;
+ const mark=()=>document.querySelectorAll('#ts button').forEach(b=>b.classList.toggle('on',b.dataset.t==th));mark();
+ document.querySelectorAll('#ts button').forEach(b=>b.onclick=()=>{th=b.dataset.t;DB.applyTheme(th);mark()});
+ $('#acx').onclick=()=>{DB.applyTheme(p.theme);shut()};
+ $('#asv').onclick=async()=>{const n=$('#anick').value.trim(),t=$('#atag').value.trim(),m=x=>{$('#am').textContent=x};
+  if(!/^[^#\s]{2,20}$/.test(n))return m('El apodo debe tener de 2 a 20 caracteres, sin espacios ni #.');
+  if(!/^[A-Za-z0-9]{1,8}$/.test(t))return m('La etiqueta debe tener de 1 a 8 letras o números.');
+  $('#asv').disabled=true;
+  try{await DB.setProfile(n,t,th);shut();acct();toast('Cuenta actualizada.')}
+  catch(e){m(e.code=='23505'?'Ese apodo con esa etiqueta ya está en uso.':(e.message||'No se pudo guardar.'));$('#asv').disabled=false}}}
 function acct(){const a=$('#acct'),u=DB.user;$('#note').hidden=!DB.client||!!u;
  if(!DB.client){a.innerHTML='';return}
  a.innerHTML=u?'<button class="av" id="av" aria-label="Cuenta"></button>':'<button class="btn" id="li">Iniciar sesión</button>';
- if(u){const b=$('#av');b.textContent=(u.email||'?')[0].toUpperCase();b.onclick=()=>{const r=b.getBoundingClientRect(),it=[[u.email||'Cuenta',()=>{}]];if(u.id===ADMIN_ID)it.push(['Ver sugerencias',sugList]);it.push(['Cerrar sesión',async()=>{await DB.client.auth.signOut()}]);menu(r.right-210,r.bottom+6,it)}}
+ if(u){const b=$('#av'),p=DB.profile;b.textContent=((p&&p.nick)||u.email||'?')[0].toUpperCase();b.onclick=()=>{const r=b.getBoundingClientRect(),it=[[p?p.nick+'#'+p.tag+' · Mi cuenta':'Mi cuenta',accountDlg]];if(DB.admin)it.push(['Ver sugerencias',sugList]);it.push(['Cerrar sesión',async()=>{await DB.client.auth.signOut()}]);menu(r.right-210,r.bottom+6,it)}}
  else $('#li').onclick=loginDlg}
 function sugDlg(){
  if(!DB.client){toast('La nube no está disponible.');return}
- const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl">Sugerencias</p><p class="mu">Cuéntame qué mejorarías o qué fallo has visto.</p><textarea id="sg" maxlength="1000" placeholder="Tu sugerencia…" style="height:140px;font-family:inherit;font-size:14px"></textarea><div class="row"><button class="btn" id="sc">Cancelar</button><button class="btn pri" id="ss">Enviar</button></div><p class="mu" id="sm"></p></div>';d.style.display='flex';$('#sg').focus();
+ const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl">Sugerencias</p><p class="mu">Cuéntame qué mejorarías o qué fallo has visto.</p><textarea id="sgt" maxlength="1000" placeholder="Tu sugerencia…" style="height:140px;font-family:inherit;font-size:14px"></textarea><div class="row"><button class="btn" id="sc">Cancelar</button><button class="btn pri" id="ss">Enviar</button></div><p class="mu" id="sm"></p></div>';d.style.display='flex';$('#sgt').focus();
  $('#sc').onclick=shut;
- $('#ss').onclick=async()=>{const m=$('#sg').value.trim();if(m.length<3){$('#sm').textContent='Escribe al menos 3 caracteres.';return}
+ $('#ss').onclick=async()=>{const m=$('#sgt').value.trim();if(m.length<3){$('#sm').textContent='Escribe al menos 3 caracteres.';return}
   $('#ss').disabled=true;const{error}=await DB.client.from('suggestions').insert({message:m});
   if(error){$('#sm').textContent=error.message;$('#ss').disabled=false}else{shut();toast('¡Gracias por tu sugerencia!')}}}
 async function sugList(){
- if(!DB.client||!DB.user||DB.user.id!==ADMIN_ID)return;
+ if(!DB.client||!DB.admin)return;
  const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl">Sugerencias recibidas</p><div id="sl" class="mu">Cargando…</div><div class="row"><button class="btn" id="sx">Cerrar</button></div></div>';d.style.display='flex';$('#sx').onclick=shut;
  const r=await DB.client.from('suggestions').select('id,message,created_at').order('created_at',{ascending:false}),L=$('#sl');
  if(r.error){L.textContent=r.error.message;return}if(!r.data.length){L.textContent='Todavía no hay sugerencias.';return}
