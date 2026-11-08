@@ -21,7 +21,8 @@
  q('#ttl').onchange=async()=>{const t=q('#ttl').value.trim()||'Sin título';q('#ttl').value=t;document.title=t+' · DiagramaDB';st('Guardando…');try{await DB.rename(id,t);ok()}catch(e){st('No se pudo guardar')}};
  q('#bk').onclick=async e=>{e.preventDefault();await flush();location.href='index.html'};
  addEventListener('pagehide',flush);
- const add=src=>new Promise(r=>{const e=document.createElement('script');e.src=src;e.onload=r;e.onerror=r;document.body.appendChild(e)});
+ /* ?v= cambia cada minuto: así el navegador no se queda con una versión vieja de los scripts tras una actualización */
+ const V=Math.floor(Date.now()/60000),add=src=>new Promise(r=>{const e=document.createElement('script');e.src=src+'?v='+V;e.onload=r;e.onerror=r;document.body.appendChild(e)});
  await add('app.js');
  await add('normalizacion-core.js');
  await add('normalizacion.js');
