@@ -29,6 +29,7 @@
  await add('historial.js');
  await add('exportar.js');
  await add('cardinalidad.js');
+ await add('reflexiva.js');
  await add('lienzo.js');
  last=cur();ok();setInterval(flush,1200);
 })();

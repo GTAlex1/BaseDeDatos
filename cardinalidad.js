@@ -34,6 +34,7 @@
   E.rels.forEach(r=>{const t=pr?(r.k||'?'):kind(E,r);if(!t)return;const n=el('text',{x:r.x,y:r.y-42,'text-anchor':'middle',class:pr?'ct rtp':'ct','data-rid':r.id,style:'font-weight:700'+(pr?';cursor:pointer':'')},cv,t);if(pr&&!r.k)n.style.opacity='.6'})};
  function cardMenu(t,x,y){const E=S.er,l=E.links.find(z=>z.id==t.dataset.id);if(!l)return;
   const it=PR.map(([mn,c,nm])=>[(l.mn==mn&&mx(l.c)==c?'✓ ':'')+'('+mn+','+c+') · '+nm,()=>{l.mn=mn;l.c=c;draw()}]);
+  it.push(['Rol: '+(l.rol||'sin nombre'),()=>ask('Rol de esta participación (por ejemplo, jefe)',l.rol||'',v=>{l.rol=v;draw()})]);if(l.rol)it.push(['Quitar rol',()=>{l.rol=null;draw()}]);
   it.push(['Sin elegir',()=>{l.mn=null;l.c=null;draw()}]);it.push(['Eliminar asociación',()=>{E.links=E.links.filter(a=>a.id!=l.id);draw()},1]);menu(x,y,it)}
  /* Un clic en la cardinalidad o en el tipo de la relación abre su menú (antes la cardinalidad giraba entre 1, N y M) */
  document.getElementById('cv').addEventListener('click',e=>{const q=e.target.closest('.rtp');if(q){e.stopImmediatePropagation();typeMenu(q.dataset.rid,e.clientX,e.clientY);return}
