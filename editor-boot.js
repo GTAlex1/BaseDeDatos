@@ -28,8 +28,10 @@
  await add('normalizacion.js');
  await add('historial.js');
  await add('exportar.js');
+ await add('generar.js');
  await add('cardinalidad.js');
  await add('reflexiva.js');
+ await add('erext.js');
  await add('lienzo.js');
  last=cur();ok();setInterval(flush,1200);
 })();
