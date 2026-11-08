@@ -1,4 +1,4 @@
-/* Historial: deshacer (Ctrl+Z) y rehacer (Ctrl+Mayús+Z o Ctrl+Y) en ER, relacional y normalización. Sustituye a snap y hist de app.js. */
+/* Historial: deshacer (Ctrl+Z) y rehacer (Ctrl+Mayús+Z o Ctrl+Y) en ER, relacional y normalización. Sustituye a snap y hist de app.js. También baja el texto de ayuda del lienzo vacío para que no lo tape la barra flotante. */
 (()=>{
  let T=0;
  const NF=[['nn','name'],['na','attrs'],['nd0','fds'],['nk','keys'],['nfs','nfs'],['nd','dec'],['nc','cl']];
@@ -14,5 +14,8 @@
   const f=e.target.closest&&e.target.closest('input,textarea');if(f&&!f.closest('#nrm'))return;
   const d=document.getElementById('dlg');if(d&&d.style.display=='flex')return;
   e.preventDefault();e.stopPropagation();hist(k=='y'||e.shiftKey?1:-1)},true);
- H.length=0;HI=-1;snap();
+ /* Los textos sueltos del lienzo (ayuda del lienzo vacío) quedaban bajo la barra flotante */
+ const draw1=draw;
+ draw=function(r){draw1(r);document.querySelectorAll('#cv>text').forEach(t=>t.setAttribute('y',(+t.getAttribute('y')||0)+90))};
+ H.length=0;HI=-1;draw();
 })();
