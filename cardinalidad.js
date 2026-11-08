@@ -1,9 +1,12 @@
-/* Cardinalidades con mínimo y máximo, p. ej. (0,N), en cada línea entidad–relación; y encima de cada relación su tipo (1:1, 1:N o N:M). También coloca las tablas generadas debajo de la barra flotante. */
+/* Cardinalidades con mínimo y máximo, p. ej. (0,N), en cada línea entidad–relación; y encima de cada relación su tipo (1:1, 1:N o N:M). También coloca las tablas generadas debajo de la barra flotante y mueve el punto de las flechas del relacional al vértice del símbolo. */
 (()=>{
  const lab=l=>l.c||l.mn?'('+(l.mn||'?')+','+(l.c||'?')+')':'?';
  const kind=(E,r)=>{const L=E.links.filter(l=>l.r==r.id);if(L.length!=2||L.some(l=>!l.c))return '';const a=L[0].c=='1',b=L[1].c=='1';return a&&b?'1:1':a||b?'1:N':'N:M'};
+ /* El punto del origen de la flecha quedaba pegado a la tabla; ahora está donde se unen las tres líneas (o tras las barras del 1) */
+ const dots=cv=>cv.querySelectorAll('[data-k=arrow]').forEach(q=>{const a=S.rel.arrows.find(z=>z.id==q.dataset.id);if(!a||!a.ty)return;const f=tab(a.f[0]),t=tab(a.t[0]);if(!f||!t)return;
+  const sd=f.x+W+30<=t.x?1:t.x+W+30<=f.x?-1:1,c=q.querySelector('circle');if(c)c.setAttribute('cx',+c.getAttribute('cx')+sd*(a.ty=='11'?18:14))});
  const dr=draw;
- draw=function(x){dr(x);if(S.tab!='er')return;const E=S.er,cv=document.getElementById('cv');
+ draw=function(x){dr(x);const E=S.er,cv=document.getElementById('cv');if(S.tab=='rel'){dots(cv);return}if(S.tab!='er')return;
   cv.querySelectorAll('[data-k=card]').forEach(g=>{const l=E.links.find(z=>z.id==g.dataset.id);if(!l)return;const rc=g.querySelector('rect');rc.setAttribute('x',-27);rc.setAttribute('width',54);rc.classList.toggle('ph',!(l.c&&l.mn));g.querySelector('text').textContent=lab(l)});
   E.rels.forEach(r=>{const t=kind(E,r);if(t)el('text',{x:r.x,y:r.y-42,'text-anchor':'middle',class:'ct',style:'font-weight:700'},cv,t)})};
  function cardMenu(t,x,y){const E=S.er,l=E.links.find(z=>z.id==t.dataset.id);if(!l)return;
