@@ -14,6 +14,6 @@
  const ctx0=ctx;ctx=function(t,x,y){if(t.dataset.k=='card')return cardMenu(t,x,y);ctx0(t,x,y)};
  const ck=checks;checks=function(){const o=ck();if(S.tab=='er')S.er.links.forEach(l=>{const e=S.er.ents.find(x=>x.id==l.e),r=S.er.rels.find(x=>x.id==l.r);if(e&&r&&l.c&&!l.mn)o.push([false,e.name+'–'+r.name+': falta el mínimo','Pulsa la cardinalidad y elige (0,…) o (1,…).'])});return o};
  /* Las tablas generadas nacen en y=30, justo bajo la barra flotante: se bajan y el cambio cuenta como un solo paso del historial */
- const gen0=gen;gen=function(){const n=H.length,i=HI;gen0();if(S.tab!='rel'||!S.rel.tabs.length)return;H.length=n;HI=i;S.rel.tabs.forEach(t=>{t.y+=80});draw()};
+ const gen0=gen;gen=function(){const s0=H[HI];gen0();if(S.tab!='rel'||!S.rel.tabs.length)return;if(H[HI]!==s0&&H.length>1){H.pop();HI=H.length-1}S.rel.tabs.forEach(t=>{t.y+=80});draw()};
  draw();
 })();
