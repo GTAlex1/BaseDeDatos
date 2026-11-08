@@ -16,6 +16,6 @@
   e.preventDefault();e.stopPropagation();hist(k=='y'||e.shiftKey?1:-1)},true);
  /* Los textos sueltos del lienzo (ayuda del lienzo vacío) quedaban bajo la barra flotante */
  const draw1=draw;
- draw=function(r){draw1(r);document.querySelectorAll('#cv>text').forEach(t=>t.setAttribute('y',(+t.getAttribute('y')||0)+90))};
+ draw=function(r){draw1(r);document.querySelectorAll('#cv>text').forEach(t=>t.setAttribute('y',(+t.getAttribute('y')||0)+40))};
  H.length=0;HI=-1;draw();
 })();
