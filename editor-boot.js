@@ -26,5 +26,6 @@
  await add('normalizacion-core.js');
  await add('normalizacion.js');
  await add('historial.js');
+ await add('exportar.js');
  last=cur();ok();setInterval(flush,1200);
 })();
