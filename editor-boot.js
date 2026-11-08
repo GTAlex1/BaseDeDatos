@@ -25,5 +25,6 @@
  await add('app.js');
  await add('normalizacion-core.js');
  await add('normalizacion.js');
+ await add('historial.js');
  last=cur();ok();setInterval(flush,1200);
 })();
