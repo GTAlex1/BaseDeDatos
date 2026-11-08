@@ -11,8 +11,10 @@
  /* Zona del máximo: barra (1) o pata de gallo (N) junto a la tabla; más allá, el mínimo: barra (1) o círculo (0) */
  const endSym=(g,x,y,d,mn,c)=>{const P=k=>x+d*k;let p=c=='1'?`M${P(7)} ${y-7}v14`:`M${P(14)} ${y}L${x} ${y-7}M${P(14)} ${y}L${x} ${y+7}`;if(mn=='1')p+=`M${P(22)} ${y-7}v14`;
   el('path',{d:p,fill:'none',stroke:'var(--ac)','stroke-width':1.8},g);if(mn=='0')el('circle',{cx:P(23),cy:y,r:4.5,fill:'var(--bg)',stroke:'var(--ac)','stroke-width':1.8},g)};
- const arrows=cv=>cv.querySelectorAll('[data-k=arrow]').forEach(q=>{const a=S.rel.arrows.find(z=>z.id==q.dataset.id),e=a&&ends(a),o=a&&geo(a);if(!e||!o)return;
-  const dot=q.querySelector('circle');q.querySelectorAll('path[stroke-width="1.8"]').forEach(p=>p.remove());if(dot)dot.setAttribute('cx',o.sx+o.sd*14);
+ /* Se quita el puntito blanco del origen de la flecha; los símbolos de cada extremo se redibujan con (mín,máx) */
+ const arrows=cv=>cv.querySelectorAll('[data-k=arrow]').forEach(q=>{q.querySelectorAll('circle').forEach(c=>c.remove());
+  const a=S.rel.arrows.find(z=>z.id==q.dataset.id),e=a&&ends(a),o=a&&geo(a);if(!e||!o)return;
+  q.querySelectorAll('path[stroke-width="1.8"]').forEach(p=>p.remove());
   endSym(q,o.sx,o.sy,o.sd,e.f[0],e.f[1]);endSym(q,o.ex,o.ey,o.ed,e.t[0],e.t[1])});
  /* Un clic en la flecha ofrece las cuatro opciones del extremo más cercano al clic */
  function arrowMenu(t,x,y){const a=S.rel.arrows.find(z=>z.id==t.dataset.id),o=a&&geo(a);if(!o)return;
