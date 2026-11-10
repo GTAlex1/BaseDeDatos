@@ -138,38 +138,4 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t
  else if(a=='undo')hist(-1);else if(a=='redo')hist(1);else if(a=='io')io();else if(a=='xd'){S.exc.splice(+v,1);draw()}
  else if(a=='xa')ask('Excepción (se asocia a: '+selName()+')','',x=>{S.exc.push({tag:selName(),text:x});draw()})});
 document.addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;const k=e.key.toLowerCase();if((e.ctrlKey||e.metaKey)&&(k=='z'||k=='y')){e.preventDefault();hist(k=='y'||e.shiftKey?1:-1)}});
-/* ===== Nube (Supabase) ===== */
-const SB_URL='https://bgnntvhlyuslrvkkejic.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbm50dmhseXVzbHJ2a2tlamljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2OTQzOTUsImV4cCI6MjEwOTI3MDM5NX0.L7POvQFo8BbGydWRgw1QYUdq9Cr-uGz2KHBjJLequJs';
-let sb=null,user=null;
-try{if(window.supabase)sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){}
-const shut=()=>{$('#dlg').style.display='none'};
-function toast(m){let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t)}t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3200)}
-function hdr(){const c=$('#cloud');if(!sb){c.innerHTML='<span class="mu">Nube no disponible</span>';return}
- c.innerHTML=user?'<button class="btn" data-c="mine">Mis diagramas</button><button class="btn" data-c="save">Guardar en la nube</button><button class="btn" data-c="out">Salir</button>':'<button class="btn" data-c="in">Iniciar sesión</button>'}
-function load(j){const E=j&&j.er,R=j&&j.rel;if(!E||!R||!Array.isArray(E.ents)||!Array.isArray(E.rels)||!Array.isArray(E.links)||!Array.isArray(R.tabs)||!Array.isArray(R.arrows))return false;E.notes=Array.isArray(E.notes)?E.notes:[];S.er=E;S.rel=R;S.exc=Array.isArray(j.exc)?j.exc:[];S.sel=null;return true}
-function loginDlg(){const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl">Cuenta</p><input id="em" type="email" placeholder="Correo" autocomplete="email"><input id="pw" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password"><div class="row"><button class="btn" id="lc">Cancelar</button><button class="btn" id="su">Crear cuenta</button><button class="btn pri" id="si">Entrar</button></div><p class="mu" id="lm"></p></div>';d.style.display='flex';$('#em').focus();
- $('#lc').onclick=shut;const cr=()=>({email:$('#em').value.trim(),password:$('#pw').value}),m=t=>{$('#lm').textContent=t};
- $('#si').onclick=async()=>{const{error}=await sb.auth.signInWithPassword(cr());if(error)m(error.message);else{shut();toast('Sesión iniciada.')}};
- $('#su').onclick=async()=>{const{data,error}=await sb.auth.signUp(cr());if(error)m(error.message);else if(!data.session)m('Cuenta creada. Revisa tu correo para confirmarla y luego pulsa Entrar.');else{shut();toast('Cuenta creada.')}}}
-async function csave(){const payload={v:1,level:S.level,er:S.er,rel:S.rel,exc:S.exc};
- ask('Título del diagrama',S.title||'Mi diagrama',async title=>{let r;
-  if(S.cloudId)r=await sb.from('diagrams').update({title,data:payload}).eq('id',S.cloudId).select('id').single();
-  else r=await sb.from('diagrams').insert({title,kind:'er',data:payload}).select('id').single();
-  if(r.error){toast(r.error.message);return}S.cloudId=r.data.id;S.title=title;save();toast('Guardado en la nube.')})}
-async function mine(){const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl">Mis diagramas</p><div id="ls" class="mu">Cargando…</div><div class="row"><button class="btn" id="lx">Cerrar</button></div></div>';d.style.display='flex';$('#lx').onclick=shut;
- const r=await sb.from('diagrams').select('id,title,updated_at').order('updated_at',{ascending:false}),L=$('#ls');
- if(r.error){L.textContent=r.error.message;return}if(!r.data.length){L.textContent='Aún no has guardado ninguno.';return}
- L.innerHTML='';L.style.cssText='display:flex;flex-direction:column;gap:8px';
- r.data.forEach(x=>{const row=document.createElement('div');row.className='ex';const s=document.createElement('span');s.textContent=x.title+' · '+new Date(x.updated_at).toLocaleDateString('es-ES');
-  const bs=document.createElement('span');bs.style.cssText='display:flex;gap:4px;flex:none';
-  const ob=document.createElement('button');ob.className='btn';ob.textContent='Abrir';
-  ob.onclick=async()=>{const q=await sb.from('diagrams').select('title,data').eq('id',x.id).single();if(q.error||!load(q.data.data)){toast(q.error?q.error.message:'El diagrama no tiene el formato esperado.');return}S.cloudId=x.id;S.title=q.data.title;shut();draw()};
-  const xb=document.createElement('button');xb.className='btn';xb.textContent='Borrar';
-  xb.onclick=()=>ask('Escribe «sí» para borrar este diagrama','',async v=>{if(!/^s[ií]/i.test(v))return;const q=await sb.from('diagrams').delete().eq('id',x.id);if(q.error)toast(q.error.message);else{if(S.cloudId==x.id)S.cloudId=null;save();mine()}});
-  bs.append(ob,xb);row.append(s,bs);L.appendChild(row)})}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-c]');if(!t||!sb)return;const a=t.dataset.c;
- if(a=='in')loginDlg();else if(a=='out'){sb.auth.signOut();S.cloudId=null;save();toast('Sesión cerrada.')}else if(a=='mine')mine();else if(a=='save')csave()});
-if(sb){sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;hdr()});sb.auth.onAuthStateChange((_e,s)=>{user=s?s.user:null;hdr()})}
-hdr();
-
 draw();
