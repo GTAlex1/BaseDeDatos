@@ -8,7 +8,7 @@ function el(t,a,p,tx){const e=document.createElementNS(X,t);for(const k in a)e.s
 const LV=[['practice','Práctica'],['verify','Verificar'],['hints','Pistas'],['auto','Automático']],TB=[['er','Entidad-relación'],['rel','Relacional'],['norm','Normalización']];
 const AK=[['key','Clave primaria'],['alt','Clave alternativa'],['attr','Atributo simple'],['multi','Multivalor']];
 const find=(k,id)=>k=='ent'?S.er.ents.find(n=>n.id==id):k=='rel'?S.er.rels.find(n=>n.id==id):k=='note'?S.er.notes.find(n=>n.id==id):S.rel.tabs.find(n=>n.id==id);
-const spot=n=>({x:Math.round($('#cw').clientWidth/2+((n*47)%200)-100),y:Math.round($('#cw').clientHeight/2+((n*61)%160)-100)});
+const spot=n=>({x:Math.round(VB.x+$('#cw').clientWidth/2/VB.k+((n*47)%200)-100),y:Math.round(VB.y+$('#cw').clientHeight/2/VB.k+((n*61)%160)-100)});
 function ask(t,v,cb){const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl" id="at"></p><input id="ai"><div class="row"><button class="btn" id="c">Cancelar</button><button class="btn pri" id="o">Aceptar</button></div></div>';d.style.display='flex';$('#at').textContent=t;const i=$('#ai');i.value=v;i.focus();i.select();const ok=()=>{const x=i.value.trim();d.style.display='none';if(x)cb(x)};$('#o').onclick=ok;$('#c').onclick=()=>d.style.display='none';i.onkeydown=e=>{if(e.key=='Enter')ok();if(e.key=='Escape')d.style.display='none'}}
 function menu(x,y,it){const m=$('#menu');m.innerHTML='';it.forEach(([t,f,c])=>{const b=document.createElement('button');b.textContent=t;if(c)b.className='dg';b.onclick=()=>{closeMenu();f()};m.appendChild(b)});m.style.display='block';m.style.left=Math.max(4,Math.min(x,innerWidth-215))+'px';m.style.top=Math.max(4,Math.min(y,innerHeight-Math.min(it.length*38+12,innerHeight*.7)-8))+'px'}
 const closeMenu=()=>{$('#menu').style.display='none'};
@@ -71,17 +71,17 @@ function side(){let h='<p class="lbl" style="margin:0">Verificación</p>';
  h+='<div style="flex:1"></div><div style="border-top:1px solid var(--ln);padding-top:12px;display:flex;flex-direction:column;gap:8px"><div class="lbl" style="margin:0">Excepciones ('+S.exc.length+')</div>';
  S.exc.forEach((x,i)=>{h+=`<div class="ex"><span><span class="tag">${esc(x.tag)}</span>${esc(x.text)}</span><button class="x" data-a="xd" data-v="${i}" aria-label="Quitar excepción">×</button></div>`});
  $('#side').innerHTML=h+'<button class="btn" data-a="xa">Añadir excepción</button></div>'}
-let D=null,J=false,LP=0,H=[],HI=-1;
+let D=null,J=false,LP=0,H=[],HI=-1,VB={x:0,y:0,k:1};
 function snap(){const s=JSON.stringify({er:S.er,rel:S.rel,exc:S.exc});if(H[HI]===s)return;H=H.slice(0,HI+1);H.push(s);if(H.length>80)H.shift();HI=H.length-1}
 function hist(d){const i=HI+d;if(i<0||i>=H.length)return;HI=i;const j=JSON.parse(H[i]);S.er=j.er;S.rel=j.rel;S.exc=j.exc;S.sel=null;draw(true)}
-const pt=e=>{const r=$('#cv').getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
+const pt=e=>{const r=$('#cv').getBoundingClientRect();return[VB.x+(e.clientX-r.left)/VB.k,VB.y+(e.clientY-r.top)/VB.k]};
 const cv=$('#cv');
 cv.addEventListener('pointerdown',e=>{if(e.button)return;const t=e.target.closest('[data-k]');if(!t){if(S.sel){S.sel=null;draw()}return}
  const k=t.dataset.k,id=t.dataset.id;clearTimeout(LP);if(e.pointerType!='mouse')LP=setTimeout(()=>{D=null;ctx(t,e.clientX,e.clientY)},550);
  if(k=='fkh'){D={m:'fk',tid:id,ri:+t.dataset.i,moved:0};cv.setPointerCapture(e.pointerId);return}
  if(['ent','rel','note','tbl'].includes(k)){const n=find(k,id);D={m:'mv',n,sx:e.clientX,sy:e.clientY,ox:n.x,oy:n.y,moved:0};S.sel=id;cv.setPointerCapture(e.pointerId);draw()}});
 cv.addEventListener('pointermove',e=>{if(!D)return;D.moved=Math.max(D.moved,Math.hypot(e.clientX-(D.sx||e.clientX),e.clientY-(D.sy||e.clientY)));if(D.moved>6)clearTimeout(LP);
- if(D.m=='mv'){D.n.x=D.ox+e.clientX-D.sx;D.n.y=D.oy+e.clientY-D.sy;draw()}else{D.xy=pt(e);D.moved=9;clearTimeout(LP);draw()}});
+ if(D.m=='mv'){D.n.x=D.ox+(e.clientX-D.sx)/VB.k;D.n.y=D.oy+(e.clientY-D.sy)/VB.k;draw()}else{D.xy=pt(e);D.moved=9;clearTimeout(LP);draw()}});
 cv.addEventListener('pointerup',e=>{clearTimeout(LP);if(!D)return;const d=D;D=null;J=d.moved>5;setTimeout(()=>J=false,0);
  if(d.m=='fk'){const c=document.elementFromPoint(e.clientX,e.clientY),t=c&&c.closest('[data-i]');
   if(t&&t.dataset.k!='fkh'){const tt=tab(t.dataset.id),ri=+t.dataset.i;if(tt&&tt.rows[ri]&&tt.rows[ri].k.includes('PK')&&!(tt.id==d.tid&&ri==d.ri)&&!S.rel.arrows.some(a=>a.f[0]==d.tid&&a.f[1]==d.ri&&a.t[0]==tt.id&&a.t[1]==ri))S.rel.arrows.push({id:uid(),f:[d.tid,d.ri],t:[tt.id,ri],ty:null})}}draw()});
