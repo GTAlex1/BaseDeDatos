@@ -28,6 +28,7 @@
  await add('normalizacion.js');
  await add('historial.js');
  await add('exportar.js');
+ await add('exportar-imagen.js');
  await add('generar.js');
  await add('cardinalidad.js');
  await add('reflexiva.js');
