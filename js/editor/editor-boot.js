@@ -34,5 +34,6 @@
  await add('js/editor/reflexiva.js');
  await add('js/editor/erext.js');
  await add('js/editor/lienzo.js');
+ await add('js/editor/zoom.js');
  last=cur();ok();setInterval(flush,1200);
 })();
