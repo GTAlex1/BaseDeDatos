@@ -12,6 +12,7 @@ Web: https://gtalex1.github.io/BaseDeDatos/
 - Trabajar con cuatro niveles de ayuda: Práctica, Verificar, Pistas y Automático.
 - Trabajar la pestaña de **normalización**.
 - Deshacer y rehacer (Ctrl+Z / Ctrl+Y).
+- **Zoom y desplazamiento** del lienzo: Ctrl + rueda o pellizco para el zoom, rueda o arrastrar un hueco para mover la vista, y botones para acercar, alejar y ajustar.
 - **Exportar e importar** el diagrama completo en JSON.
 - Generar **SQL** (`CREATE TABLE` y claves foráneas) desde el esquema relacional.
 - Descargar la pestaña actual como **imagen SVG o PNG** (siempre con tema claro y recortada al contenido).
@@ -21,18 +22,31 @@ Web: https://gtalex1.github.io/BaseDeDatos/
 
 Es una web estática (HTML, CSS y JavaScript sin compilar). El HTML, el CSS y el JS van en archivos separados.
 
+```
+index.html          portada: lista de diagramas
+editor.html         editor
+robots.txt
+assets/             favicon.svg
+css/                styles, pages, editor, normalizacion, zoom
+js/
+  comun/            store.js (diagramas: Supabase con sesión, localStorage sin ella)
+  portada/          home, cuenta, config, sugerencias, papelera, mensajes
+  editor/           app.js y los módulos del editor
+  normalizacion/    normalizacion-core.js y normalizacion.js
+.github/workflows/  mantener-supabase.yml
+```
+
 | Archivo | Para qué sirve |
 | --- | --- |
-| `index.html`, `editor.html` | Portada con la lista de diagramas y página del editor |
-| `styles.css`, `pages.css`, `editor.css`, `normalizacion.css` | Estilos (colores y tema claro/oscuro con variables CSS) |
-| `app.js` | Núcleo del editor: estado `S`, dibujo del lienzo SVG, menús, deshacer, generar relacional y SQL |
-| `store.js` | Almacén de diagramas: Supabase si hay sesión y `localStorage` si no |
-| `editor-boot.js` | Carga el diagrama de la URL, arranca el editor y lo guarda solo |
-| `exportar.js` | Importar/exportar JSON y SQL |
-| `exportar-imagen.js` | Exportar SVG y PNG (se engancha al diálogo de `exportar.js`) |
-| `lienzo.js` | Menú del lienzo vacío (borrar todo) |
+| `js/editor/app.js` | Núcleo del editor: estado `S`, dibujo del lienzo SVG, menús, deshacer, generar relacional y SQL |
+| `js/editor/editor-boot.js` | Carga el diagrama de la URL, arranca el editor y lo guarda solo |
+| `js/editor/exportar.js` | Importar/exportar JSON y SQL |
+| `js/editor/exportar-imagen.js` | Exportar SVG y PNG (se engancha al diálogo de `exportar.js`) |
+| `js/editor/zoom.js` y `css/zoom.css` | Zoom y desplazamiento del lienzo (cambian el `viewBox` del SVG) |
+| `js/editor/lienzo.js` | Menú del lienzo vacío (borrar todo) |
+| `js/comun/store.js` | Almacén de diagramas, compartido por la portada y el editor |
 
-`editor-boot.js` carga los demás módulos del editor en orden. Para añadir un módulo nuevo, créalo y añade una línea `await add('mi-modulo.js');` en esa lista.
+`editor-boot.js` carga los demás módulos del editor en orden, con rutas relativas a `editor.html`. Para añadir un módulo nuevo, créalo en `js/editor/` y añade una línea `await add('js/editor/mi-modulo.js');` en esa lista.
 
 ## Base de datos (Supabase)
 
