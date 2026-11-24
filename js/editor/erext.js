@@ -1,11 +1,11 @@
-/* Extensiones del ER: atributos en las relaciones, entidades débiles (doble rectángulo), relaciones identificadoras (doble rombo) y clave parcial. */
+/* Extensiones del ER: atributos en las relaciones, entidades débiles (doble rectángulo), relaciones identificadoras (doble rombo), clave parcial y atributos derivados. */
 (()=>{
- AK.push(['part','Clave parcial (entidad débil)']);
+ AK.push(['part','Clave parcial (entidad débil)'],['der','Atributo derivado (calculable)']);
  const RK=[['attr','Atributo simple'],['multi','Multivalor']],cv=document.getElementById('cv');
  const dr=draw;
  draw=function(x){dr(x);if(S.tab!='er')return;const E=S.er;
   cv.querySelectorAll('[data-k=attr]').forEach(g=>{const e=E.ents.find(z=>z.id==g.dataset.id),a=e&&e.attrs[+g.dataset.i];
-   if(a&&a.k=='part'){const c=g.querySelector('circle'),t=g.querySelector('text');if(c)c.setAttribute('stroke-dasharray','3 2');if(t)t.style.textDecoration='underline dashed'}});
+   if(a&&(a.k=='part'||a.k=='der')){const c=g.querySelector('circle'),t=g.querySelector('text');if(c)c.setAttribute('stroke-dasharray','3 2');if(t&&a.k=='part')t.style.textDecoration='underline dashed'}});
   E.ents.forEach(n=>{if(!n.weak)return;const g=cv.querySelector('[data-k=ent][data-id="'+n.id+'"]');if(g)el('rect',{x:n.x-55,y:n.y-19,width:110,height:38,class:'sh',style:'fill:none'},g)});
   E.rels.forEach(r=>{const g=cv.querySelector('[data-k=rel][data-id="'+r.id+'"]');
    if(r.ident&&g)el('polygon',{points:`${r.x},${r.y-28} ${r.x+49},${r.y} ${r.x},${r.y+28} ${r.x-49},${r.y}`,class:'sh',style:'fill:none'},g);
