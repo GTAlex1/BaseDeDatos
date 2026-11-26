@@ -1,5 +1,6 @@
 /* Editor: aspecto profesional. Se carga después de styles.css y pages.css. */
 :root{--ef:#EEF2FF;--es:#2F5BEA;--rf:#FFF4DC;--rs:#B7791F;--sd:0 1px 3px rgba(20,30,60,.12),0 4px 12px rgba(20,30,60,.06)}
+:root[data-theme="dark"]{--ef:#232B45;--es:#7C9BFF;--rf:#3A2D12;--rs:#F0C27A;--sd:0 1px 3px rgba(0,0,0,.5),0 4px 12px rgba(0,0,0,.3)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--ef:#232B45;--es:#7C9BFF;--rf:#3A2D12;--rs:#F0C27A;--sd:0 1px 3px rgba(0,0,0,.5),0 4px 12px rgba(0,0,0,.3)}}
 body{-webkit-font-smoothing:antialiased}
 :focus-visible{outline:2px solid var(--ac);outline-offset:2px}
