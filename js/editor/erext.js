@@ -1,7 +1,7 @@
 /* Extensiones del ER: atributos en las relaciones, entidades débiles (doble rectángulo), relaciones identificadoras (doble rombo), clave parcial y atributos derivados. */
 (()=>{
  AK.push(['part','Clave parcial (entidad débil)'],['der','Atributo derivado (calculable)']);
- const RK=[['attr','Atributo simple'],['multi','Multivalor']],cv=document.getElementById('cv');
+ const RK=[['attr','Atributo simple'],['opt','Atributo opcional'],['multi','Multivalor']],cv=document.getElementById('cv');
  const dr=draw;
  draw=function(x){dr(x);if(S.tab!='er')return;const E=S.er;
   cv.querySelectorAll('[data-k=attr]').forEach(g=>{const e=E.ents.find(z=>z.id==g.dataset.id),a=e&&e.attrs[+g.dataset.i];
@@ -11,7 +11,7 @@
    if(r.ident&&g)el('polygon',{points:`${r.x},${r.y-28} ${r.x+49},${r.y} ${r.x},${r.y+28} ${r.x-49},${r.y}`,class:'sh',style:'fill:none'},g);
    (r.attrs||[]).forEach((a,i,A)=>{const o=i-(A.length-1)/2,cx=r.x+o*38,cy=r.y+72,w=el('g',{'data-k':'rattr','data-id':r.id,'data-i':i,class:'hit'},cv);
     el('path',{d:`M${r.x+o*16} ${r.y+26}L${cx} ${cy-8}`,class:'ln'},w);circ(w,cx,cy,a.k);
-    el('text',{transform:`translate(${cx+4} ${cy+(a.k=='multi'?20:18)}) rotate(-45)`,'text-anchor':'end'},w,a.n)})})};
+    el('text',{transform:`translate(${cx+4} ${cy+(a.k=='multi'?20:18)}) rotate(-45)`,'text-anchor':'end'},w,nombreAtributo(a))})})};
  /* Menús: atributos de relación, y marcar entidad débil / relación identificadora */
  const ctx1=ctx;ctx=function(t,x,y){const k=t.dataset.k,E=S.er,id=t.dataset.id;
   if(k=='rattr'){const r=E.rels.find(z=>z.id==id),i=+t.dataset.i,a=r&&(r.attrs||[])[i];if(!a)return;

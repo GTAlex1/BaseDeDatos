@@ -1,7 +1,8 @@
-/* Cardinalidades con mínimo y máximo (solo 1 o N): en el ER, (0,N) en cada línea entidad–relación y el tipo (1:1, 1:N, N:M) sobre el rombo; en el relacional, cada extremo de la flecha tiene su propio (mín,máx) con símbolos de pata de gallo. En modo Práctica no hay nada automático: el tipo de la relación sale como ? y se elige a mano, y al fijar un extremo de una flecha el otro no se rellena. También coloca las tablas generadas bajo la barra flotante. */
+/* Cardinalidades con mínimo y máximo (solo 1 o N): en el ER, (0,n) en cada línea entidad–relación y el tipo (1:1, 1:N, N:M) sobre el rombo; en el relacional, cada extremo de la flecha tiene su propio (mín,máx) con símbolos de pata de gallo. En modo Práctica no hay nada automático: el tipo de la relación sale como ? y se elige a mano, y al fijar un extremo de una flecha el otro no se rellena. También coloca las tablas generadas bajo la barra flotante. */
 (()=>{
  const mx=c=>c=='M'?'N':c,prac=()=>/^pr/i.test(S.level||'');
- const lab=l=>l.c||l.mn?'('+(l.mn||'?')+','+(mx(l.c)||'?')+')':'?';
+ const extremo=c=>String(mx(c)||'?').toLowerCase();
+ const lab=l=>l.c||l.mn?'('+(l.mn||'?')+','+extremo(l.c)+')':'?';
  const kind=(E,r)=>{const L=E.links.filter(l=>l.r==r.id);if(L.length!=2||L.some(l=>!l.c))return '';const a=L[0].c=='1',b=L[1].c=='1';return a&&b?'1:1':a||b?'1:N':'N:M'};
  const PR=[['0','1','como mucho uno'],['1','1','exactamente uno'],['0','N','cualquier número'],['1','N','al menos uno']];
  /* Relacional: extremos de cada flecha. Las flechas antiguas (solo con tipo) se interpretan como FK (0,N) → PK (1,1), 1:1 como (1,1)–(1,1) y N:M como (0,N)–(0,N) */
@@ -20,7 +21,7 @@
  /* Un clic en la flecha ofrece las cuatro opciones del extremo más cercano al clic. Fuera del modo Práctica, el otro extremo se rellena con FK (0,N) y PK (1,1) si aún no estaba */
  function arrowMenu(t,x,y){const a=S.rel.arrows.find(z=>z.id==t.dataset.id),o=a&&geo(a);if(!o)return;
   const r=document.getElementById('cv').getBoundingClientRect(),px=x-r.left,py=y-r.top,s=Math.hypot(px-o.sx,py-o.sy)<=Math.hypot(px-o.ex,py-o.ey)?'f':'t';
-  const cur=raw(a),base=prac()?cur:{f:cur.f||['0','N'],t:cur.t||['1','1']},it=PR.map(([mn,c,nm])=>[(cur[s]&&cur[s][0]==mn&&cur[s][1]==c?'✓ ':'')+'('+mn+','+c+') · '+nm,()=>{
+  const cur=raw(a),base=prac()?cur:{f:cur.f||['0','N'],t:cur.t||['1','1']},it=PR.map(([mn,c,nm])=>[(cur[s]&&cur[s][0]==mn&&cur[s][1]==c?'✓ ':'')+'('+mn+','+extremo(c)+') · '+nm,()=>{
    const n={f:s=='f'?[mn,c]:base.f,t:s=='t'?[mn,c]:base.t};a.fm=n.f?n.f[0]:null;a.fc=n.f?n.f[1]:null;a.tm=n.t?n.t[0]:null;a.tc=n.t?n.t[1]:null;
    a.ty=n.f&&n.t?(n.f[1]=='1'&&n.t[1]=='1'?'11':n.f[1]!='1'&&n.t[1]!='1'?'NM':'1N'):null;draw()}]);
   it.push(['Eliminar flecha',()=>{S.rel.arrows=S.rel.arrows.filter(z=>z.id!=a.id);draw()},1]);menu(x,y,it)}
@@ -33,7 +34,7 @@
   cv.querySelectorAll('[data-k=card]').forEach(g=>{const l=E.links.find(z=>z.id==g.dataset.id);if(!l)return;const rc=g.querySelector('rect');rc.setAttribute('x',-27);rc.setAttribute('width',54);rc.classList.toggle('ph',!(l.c&&l.mn));g.querySelector('text').textContent=lab(l)});
   E.rels.forEach(r=>{const t=pr?(r.k||'?'):kind(E,r);if(!t)return;const n=el('text',{x:r.x,y:r.y-42,'text-anchor':'middle',class:pr?'ct rtp':'ct','data-rid':r.id,style:'font-weight:700'+(pr?';cursor:pointer':'')},cv,t);if(pr&&!r.k)n.style.opacity='.6'})};
  function cardMenu(t,x,y){const E=S.er,l=E.links.find(z=>z.id==t.dataset.id);if(!l)return;
-  const it=PR.map(([mn,c,nm])=>[(l.mn==mn&&mx(l.c)==c?'✓ ':'')+'('+mn+','+c+') · '+nm,()=>{l.mn=mn;l.c=c;draw()}]);
+  const it=PR.map(([mn,c,nm])=>[(l.mn==mn&&mx(l.c)==c?'✓ ':'')+'('+mn+','+extremo(c)+') · '+nm,()=>{l.mn=mn;l.c=c;draw()}]);
   it.push(['Rol: '+(l.rol||'sin nombre'),()=>ask('Rol de esta participación (por ejemplo, jefe)',l.rol||'',v=>{l.rol=v;draw()})]);if(l.rol)it.push(['Quitar rol',()=>{l.rol=null;draw()}]);
   it.push(['Sin elegir',()=>{l.mn=null;l.c=null;draw()}]);it.push(['Eliminar asociación',()=>{E.links=E.links.filter(a=>a.id!=l.id);draw()},1]);menu(x,y,it)}
  /* Un clic en la cardinalidad o en el tipo de la relación abre su menú (antes la cardinalidad giraba entre 1, N y M) */

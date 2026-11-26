@@ -4,7 +4,7 @@ function buildRel(E){
  const mk=(name,rows)=>{const t={id:uid(),x:30+(n%3)*300,y:30+Math.floor(n/3)*230,name,rows};n++;T.push(t);return t};
  const pks=p=>{const r=[];p.rows.forEach((x,i)=>{if(x.k.includes('PK'))r.push(i)});return r.length?r:[0]};
  const fk=(c,p,ty,pk)=>pks(p).forEach(pi=>{const r=p.rows[pi]||{n:'id',t:'INT'};c.rows.push({n:r.n,t:r.t,k:pk?['PK','FK']:['FK']});A.push({id:uid(),f:[c.id,c.rows.length-1],t:[p.id,pi],ty})});
- E.ents.forEach(e=>{m[e.id]=mk(e.name.toUpperCase(),e.attrs.filter(a=>a.k!='multi'&&a.k!='der').map(a=>({n:a.n,t:a.k=='key'?'INT':'VARCHAR(50)',k:a.k=='key'||a.k=='part'?['PK']:a.k=='alt'?['UQ']:[]})))});
+ E.ents.forEach(e=>{m[e.id]=mk(e.name.toUpperCase(),e.attrs.filter(a=>a.k!='multi'&&a.k!='der').map(a=>({n:a.n,t:a.k=='key'?'INT':'VARCHAR(50)',k:a.k=='key'||a.k=='part'?['PK']:a.k=='alt'?['UQ']:a.k=='opt'?['NULL']:[]})))});
  /* Entidades débiles: su clave primaria incluye la de la entidad propietaria (lado 1 de la relación identificadora). Se procesan en el orden de las relaciones, así una débil puede depender de otra débil */
  const handled=new Set(),isW=l=>(E.ents.find(e=>e.id==l.e)||{}).weak;
  E.rels.filter(r=>r.ident).forEach(r=>{const L=E.links.filter(l=>l.r==r.id&&m[l.e]),ws=L.filter(l=>isW(l)&&mx(l.c)!='1'),os=L.filter(l=>!ws.includes(l));if(!ws.length||!os.length)return;handled.add(r.id);
@@ -13,7 +13,7 @@ function buildRel(E){
    W.rows.unshift(...list.map(x=>({n:x.r.n,t:x.r.t,k:['PK','FK']})));list.forEach((x,j)=>A.push({id:uid(),f:[W.id,j],t:[x.P.id,x.pi],ty:'1N'}))})});
  E.ents.forEach(e=>e.attrs.filter(a=>a.k=='multi').forEach(a=>{const c=mk(e.name.toUpperCase()+'_'+a.n.toUpperCase(),[]);fk(c,m[e.id],'1N',1);c.rows.push({n:a.n,t:'VARCHAR(50)',k:['PK']})}));
  E.rels.forEach(r=>{if(handled.has(r.id))return;const L=E.links.filter(l=>l.r==r.id&&m[l.e]);if(L.length<2||L.some(l=>!l.c))return;
-  const at=(r.attrs||[]).filter(a=>a.k!='multi').map(a=>({n:a.n,t:'VARCHAR(50)',k:[]})),mn=L.filter(l=>mx(l.c)!='1');
+  const at=(r.attrs||[]).filter(a=>a.k!='multi').map(a=>({n:a.n,t:'VARCHAR(50)',k:a.k=='opt'?['NULL']:[]})),mn=L.filter(l=>mx(l.c)!='1');
   if(L.length==2){const[a,b]=L,x=m[a.e],y=m[b.e];
    if(mn.length==2){const c=mk(r.name.toUpperCase(),[]);fk(c,x,'1N',1);fk(c,y,'1N',1);c.rows.push(...at)}
    else if(a.c=='1'&&mx(b.c)!='1'){fk(y,x,'1N');y.rows.push(...at)}

@@ -6,7 +6,7 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function el(t,a,p,tx){const e=document.createElementNS(X,t);for(const k in a)e.setAttribute(k,a[k]);if(tx!=null)e.textContent=tx;if(p)p.appendChild(e);return e}
 const LV=[['practice','Práctica'],['verify','Verificar'],['hints','Pistas'],['auto','Automático']],TB=[['er','Entidad-relación'],['rel','Relacional'],['norm','Normalización']];
-const AK=[['key','Clave primaria'],['alt','Clave alternativa'],['attr','Atributo simple'],['multi','Multivalor']];
+const AK=[['key','Clave primaria'],['alt','Clave alternativa'],['attr','Atributo simple'],['opt','Atributo opcional'],['multi','Multivalor']];
 const find=(k,id)=>k=='ent'?S.er.ents.find(n=>n.id==id):k=='rel'?S.er.rels.find(n=>n.id==id):k=='note'?S.er.notes.find(n=>n.id==id):S.rel.tabs.find(n=>n.id==id);
 const spot=n=>({x:Math.round(VB.x+$('#cw').clientWidth/2/VB.k+((n*47)%200)-100),y:Math.round(VB.y+$('#cw').clientHeight/2/VB.k+((n*61)%160)-100)});
 function ask(t,v,cb){const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl" id="at"></p><input id="ai"><div class="row"><button class="btn" id="c">Cancelar</button><button class="btn pri" id="o">Aceptar</button></div></div>';d.style.display='flex';$('#at').textContent=t;const i=$('#ai');i.value=v;i.focus();i.select();const ok=()=>{const x=i.value.trim();d.style.display='none';if(x)cb(x)};$('#o').onclick=ok;$('#c').onclick=()=>d.style.display='none';i.onkeydown=e=>{if(e.key=='Enter')ok();if(e.key=='Escape')d.style.display='none'}}
@@ -14,6 +14,7 @@ function menu(x,y,it){const m=$('#menu');m.innerHTML='';it.forEach(([t,f,c])=>{c
 const closeMenu=()=>{$('#menu').style.display='none'};
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('#menu'))closeMenu()},true);
 function wrap(s,n){const o=[];let l='';s.split(/\s+/).forEach(w=>{if((l+' '+w).trim().length>n){o.push(l);l=w}else l=(l+' '+w).trim()});o.push(l);return o}
+const nombreAtributo=a=>a.k==='opt'?a.n+' (0,1)':a.n;
 function circ(g,cx,cy,k,r){r=r||8;if(k=='key')return el('circle',{cx,cy,r,class:'fl'},g);el('circle',{cx,cy,r:k=='multi'?r+1:r,class:'sh'},g);if(k=='alt')el('path',{d:`M${cx} ${cy-r}A${r} ${r} 0 0 0 ${cx} ${cy+r}z`,class:'fl'},g);if(k=='multi')el('circle',{cx,cy,r:r-2.5,class:'ln'},g)}
 function drawER(g){const E=S.er,by={};E.ents.concat(E.rels).forEach(n=>by[n.id]=n);
  E.links.forEach(l=>{const a=by[l.e],b=by[l.r];if(a&&b)el('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:'ln'},g)});
@@ -21,7 +22,7 @@ function drawER(g){const E=S.er,by={};E.ents.concat(E.rels).forEach(n=>by[n.id]=
  E.ents.forEach(n=>{const q=el('g',{'data-k':'ent','data-id':n.id,class:'nd'+(S.sel==n.id?' sel':'')},g);
   n.attrs.forEach((a,i,A)=>{const o=i-(A.length-1)/2,cx=n.x+o*38,cy=n.y+66,w=el('g',{'data-k':'attr','data-id':n.id,'data-i':i,class:'hit'},g);
    el('path',{d:`M${n.x+o*24} ${n.y+24}L${cx} ${cy-8}`,class:'ln'},w);circ(w,cx,cy,a.k);
-   el('text',{transform:`translate(${cx+4} ${cy+(a.k=='multi'?20:18)}) rotate(-45)`,'text-anchor':'end',class:a.k=='key'?'u':''},w,a.n)});
+   el('text',{transform:`translate(${cx+4} ${cy+(a.k=='multi'?20:18)}) rotate(-45)`,'text-anchor':'end',class:a.k=='key'?'u':''},w,nombreAtributo(a))});
   el('rect',{x:n.x-60,y:n.y-24,width:120,height:48,class:'sh'},q);el('text',{x:n.x,y:n.y+5,'text-anchor':'middle',class:'b'},q,n.name)});
  E.rels.forEach(n=>{const q=el('g',{'data-k':'rel','data-id':n.id,class:'nd'+(S.sel==n.id?' sel':'')},g);
   el('polygon',{points:`${n.x},${n.y-34} ${n.x+58},${n.y} ${n.x},${n.y+34} ${n.x-58},${n.y}`,class:'sh'},q);el('text',{x:n.x,y:n.y+5,'text-anchor':'middle'},q,n.name)});
@@ -108,7 +109,7 @@ function ctx(t,x,y){const k=t.dataset.k,id=t.dataset.id,i=+t.dataset.i,E=S.er,R=
  else if(k=='note'){const n=find('note',id);it.push(['Editar texto',()=>ask('Texto de la nota',n.text,v=>{n.text=v;draw()})]);del(()=>{E.notes=E.notes.filter(a=>a.id!=id);draw()})}
  else if(k=='card'){const l=E.links.find(a=>a.id==id);['1','N','M'].forEach(c=>it.push([(l.c==c?'✓ ':'')+'Cardinalidad '+c,()=>{l.c=c;draw()}]));it.push(['Sin elegir',()=>{l.c=null;draw()}]);it.push(['Eliminar asociación',()=>{E.links=E.links.filter(a=>a.id!=id);draw()},1])}
  else if(k=='tbl'){const n=find('tbl',id);rn(n);del(()=>{R.tabs=R.tabs.filter(a=>a.id!=id);R.arrows=R.arrows.filter(a=>a.f[0]!=id&&a.t[0]!=id);draw()})}
- else if(k=='ncell'||k=='tcell'||k=='kcell'){const tb=tab(id),r=tb.rows[i];if(k=='kcell')[['PK','Clave primaria'],['FK','Clave foránea'],['UQ','Clave alternativa']].forEach(([c,nm])=>it.push([(r.k.includes(c)?'✓ ':'')+nm+' ('+c+')',()=>{r.k=r.k.includes(c)?r.k.filter(z=>z!=c):r.k.concat(c);draw()}]));
+ else if(k=='ncell'||k=='tcell'||k=='kcell'){const tb=tab(id),r=tb.rows[i];if(k=='kcell')[['PK','Clave primaria'],['FK','Clave foránea'],['UQ','Clave alternativa'],...(!r.k.includes('PK')?[['NULL','Atributo opcional']]:[])].forEach(([c,nm])=>it.push([(r.k.includes(c)?'✓ ':'')+nm+' ('+c+')',()=>{r.k=r.k.includes(c)?r.k.filter(z=>z!=c):r.k.filter(z=>c!=='PK'||z!=='NULL').concat(c);draw()}]));
   it.push(['Eliminar campo',()=>{tb.rows.splice(i,1);R.arrows=R.arrows.filter(a=>!((a.f[0]==id&&a.f[1]==i)||(a.t[0]==id&&a.t[1]==i))).map(a=>{[a.f,a.t].forEach(p=>{if(p[0]==id&&p[1]>i)p[1]--});return a});draw()},1])}
  else if(k=='arrow'){const a=R.arrows.find(z=>z.id==id);[['11','1:1 · uno a uno'],['1N','1:N · uno a muchos'],['NM','N:M · muchos a muchos']].forEach(([c,nm])=>it.push([(a.ty==c?'✓ ':'')+nm,()=>{a.ty=c;draw()}]));it.push(['Eliminar flecha',()=>{R.arrows=R.arrows.filter(z=>z.id!=id);draw()},1])}
  if(it.length)menu(x,y,it)}
@@ -120,7 +121,7 @@ function gen(){const E=S.er,T=[],A=[],m={};let n=0;const mk=(name,rows)=>{const 
   if(a.c!='1'&&b.c!='1'){const c=mk(r.name.toUpperCase(),[]);fk(c,x,'1N',1);fk(c,y,'1N',1)}else if(a.c=='1'&&b.c!='1')fk(y,x,'1N');else if(b.c=='1'&&a.c!='1')fk(x,y,'1N');else fk(x,y,'11')});
  S.rel={tabs:T,arrows:A};S.tab='rel';draw()}
 function sql(){const id=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\W+/g,'_').toLowerCase(),T=S.rel.tabs;
- const c=T.map(t=>{const pk=t.rows.filter(r=>r.k.includes('PK')).map(r=>id(r.n)),L=t.rows.map(r=>'  '+id(r.n)+' '+r.t+(r.k.includes('UQ')?' UNIQUE':''));if(pk.length)L.push('  PRIMARY KEY ('+pk.join(', ')+')');return 'CREATE TABLE '+id(t.name)+' (\n'+L.join(',\n')+'\n);'});
+ const c=T.map(t=>{const pk=t.rows.filter(r=>r.k.includes('PK')).map(r=>id(r.n)),L=t.rows.map(r=>'  '+id(r.n)+' '+r.t+(r.k.includes('NULL')&&!r.k.includes('PK')?' NULL':'')+(r.k.includes('UQ')?' UNIQUE':''));if(pk.length)L.push('  PRIMARY KEY ('+pk.join(', ')+')');return 'CREATE TABLE '+id(t.name)+' (\n'+L.join(',\n')+'\n);'});
  const f=S.rel.arrows.map(a=>{const x=tab(a.f[0]),y=tab(a.t[0]);return x&&y?'ALTER TABLE '+id(x.name)+' ADD FOREIGN KEY ('+id(x.rows[a.f[1]].n)+') REFERENCES '+id(y.name)+' ('+id(y.rows[a.t[1]].n)+');':''}).filter(Boolean);
  return c.concat(f).join('\n\n')||'-- Aún no hay tablas en el esquema relacional.'}
 function io(){const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl">Importar / exportar (JSON)</p><textarea id="ta" spellcheck="false"></textarea><input type="file" id="fi" accept=".json,application/json"><div class="row"><button class="btn" id="cp">Copiar</button><button class="btn" id="js">JSON</button><button class="btn" id="sq">SQL</button><button class="btn pri" id="ap">Importar</button><button class="btn" id="cl">Cerrar</button></div><p class="mu" id="ms"></p></div>';d.style.display='flex';
