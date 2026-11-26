@@ -39,13 +39,16 @@ const DB=(()=>{
   if(r.error)return null;
   c.from('diagrams').update({last_opened_at:now()}).eq('id',id).then(()=>{},()=>{});
   return r.data};
+ const titleLimit=title=>String(title).trim().slice(0,80).replace(/[\uD800-\uDBFF]$/u,'').trimEnd()||'Sin título';
  db.create=async(title,data,local)=>{
+  title=titleLimit(title);
   if(!local&&c&&db.user){const r=await c.from('diagrams').insert({title,kind:data.type=='uml'?'uml':'er',data,thumb:mkThumb(data)}).select('id').single();if(r.error)throw r.error;return r.data.id}
   const id='l-'+Math.random().toString(36).slice(2,10),o=rd();o[id]={title,updated_at:now(),data};wr(o);return id};
  db.save=async(id,title,data)=>{
   if(isL(id)){const o=rd();if(o[id]){o[id]={title,updated_at:now(),data};wr(o)}return}
   const r=await c.from('diagrams').update({title,data,thumb:mkThumb(data)}).eq('id',id);if(r.error)throw r.error};
  db.rename=async(id,title)=>{
+  title=titleLimit(title);
   if(isL(id)){const o=rd();if(o[id]){o[id].title=title;o[id].updated_at=now();wr(o)}return}
   const r=await c.from('diagrams').update({title}).eq('id',id);if(r.error)throw r.error};
  /* En la nube, eliminar = mandar a la papelera. */

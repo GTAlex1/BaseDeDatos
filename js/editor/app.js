@@ -9,7 +9,23 @@ const LV=[['practice','Práctica'],['verify','Verificar'],['hints','Pistas'],['a
 const AK=[['key','Clave primaria'],['alt','Clave alternativa'],['attr','Atributo simple'],['opt','Atributo opcional'],['multi','Multivalor']];
 const find=(k,id)=>k=='ent'?S.er.ents.find(n=>n.id==id):k=='rel'?S.er.rels.find(n=>n.id==id):k=='note'?S.er.notes.find(n=>n.id==id):S.rel.tabs.find(n=>n.id==id);
 const spot=n=>({x:Math.round(VB.x+$('#cw').clientWidth/2/VB.k+((n*47)%200)-100),y:Math.round(VB.y+$('#cw').clientHeight/2/VB.k+((n*61)%160)-100)});
-function ask(t,v,cb){const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl" id="at"></p><input id="ai"><div class="row"><button class="btn" id="c">Cancelar</button><button class="btn pri" id="o">Aceptar</button></div></div>';d.style.display='flex';$('#at').textContent=t;const i=$('#ai');i.value=v;i.focus();i.select();const ok=()=>{const x=i.value.trim();d.style.display='none';if(x)cb(x)};$('#o').onclick=ok;$('#c').onclick=()=>d.style.display='none';i.onkeydown=e=>{if(e.key=='Enter')ok();if(e.key=='Escape')d.style.display='none'}}
+function ask(t,v,cb,limit){const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl" id="at"></p><input id="ai"><div class="row"><button class="btn" id="c">Cancelar</button><button class="btn pri" id="o">Aceptar</button></div></div>';d.style.display='flex';$('#at').textContent=t;const i=$('#ai');if(limit)i.maxLength=limit;i.value=v;i.focus();i.select();const ok=()=>{const x=i.value.trim();if(limit&&x.length>limit){i.setCustomValidity('Usa como máximo '+limit+' caracteres.');i.reportValidity();i.setCustomValidity('');return}d.style.display='none';if(x)cb(x)};$('#o').onclick=ok;$('#c').onclick=()=>d.style.display='none';i.onkeydown=e=>{if(e.key=='Enter')ok();if(e.key=='Escape')d.style.display='none'}}
+const askNombre=(label,value,save)=>ask(label,value,save,48);
+function textoAjustado(attrs,parent,value,width){
+ const text=el('text',attrs,parent,value);
+ if(text.getComputedTextLength()<=width)return text;
+ const chars=Array.from(String(value));
+ let min=0,max=chars.length;
+ while(min<max){
+  const mid=Math.ceil((min+max)/2);
+  text.textContent=chars.slice(0,mid).join('')+'…';
+  if(text.getComputedTextLength()<=width)min=mid;
+  else max=mid-1;
+ }
+ text.textContent=chars.slice(0,min).join('')+'…';
+ el('title',{},text,value);
+ return text;
+}
 function menu(x,y,it){const m=$('#menu');m.innerHTML='';it.forEach(([t,f,c])=>{const b=document.createElement('button');b.textContent=t;if(c)b.className='dg';b.onclick=()=>{closeMenu();f()};m.appendChild(b)});m.style.display='block';m.style.left=Math.max(4,Math.min(x,innerWidth-215))+'px';m.style.top=Math.max(4,Math.min(y,innerHeight-Math.min(it.length*38+12,innerHeight*.7)-8))+'px'}
 const closeMenu=()=>{$('#menu').style.display='none'};
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('#menu'))closeMenu()},true);
@@ -22,10 +38,10 @@ function drawER(g){const E=S.er,by={};E.ents.concat(E.rels).forEach(n=>by[n.id]=
  E.ents.forEach(n=>{const q=el('g',{'data-k':'ent','data-id':n.id,class:'nd'+(S.sel==n.id?' sel':'')},g);
   n.attrs.forEach((a,i,A)=>{const o=i-(A.length-1)/2,cx=n.x+o*38,cy=n.y+66,w=el('g',{'data-k':'attr','data-id':n.id,'data-i':i,class:'hit'},g);
    el('path',{d:`M${n.x+o*24} ${n.y+24}L${cx} ${cy-8}`,class:'ln'},w);circ(w,cx,cy,a.k);
-   el('text',{transform:`translate(${cx+4} ${cy+(a.k=='multi'?20:18)}) rotate(-45)`,'text-anchor':'end',class:a.k=='key'?'u':''},w,nombreAtributo(a))});
-  el('rect',{x:n.x-60,y:n.y-24,width:120,height:48,class:'sh'},q);el('text',{x:n.x,y:n.y+5,'text-anchor':'middle',class:'b'},q,n.name)});
+   textoAjustado({transform:`translate(${cx+4} ${cy+(a.k=='multi'?20:18)}) rotate(-45)`,'text-anchor':'end',class:a.k=='key'?'u':''},w,nombreAtributo(a),140)});
+  el('rect',{x:n.x-60,y:n.y-24,width:120,height:48,class:'sh'},q);textoAjustado({x:n.x,y:n.y+5,'text-anchor':'middle',class:'b'},q,n.name,106)});
  E.rels.forEach(n=>{const q=el('g',{'data-k':'rel','data-id':n.id,class:'nd'+(S.sel==n.id?' sel':'')},g);
-  el('polygon',{points:`${n.x},${n.y-34} ${n.x+58},${n.y} ${n.x},${n.y+34} ${n.x-58},${n.y}`,class:'sh'},q);el('text',{x:n.x,y:n.y+5,'text-anchor':'middle'},q,n.name)});
+  el('polygon',{points:`${n.x},${n.y-34} ${n.x+58},${n.y} ${n.x},${n.y+34} ${n.x-58},${n.y}`,class:'sh'},q);textoAjustado({x:n.x,y:n.y+5,'text-anchor':'middle'},q,n.name,76)});
  E.links.forEach(l=>{const a=by[l.e],b=by[l.r];if(!a||!b)return;const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1,t=Math.min(86,d/2-20);
   const c=el('g',{'data-k':'card','data-id':l.id,class:'hit',transform:`translate(${a.x+dx/d*t} ${a.y+dy/d*t})`},g);
   el('rect',{x:-17,y:-12,width:34,height:24,rx:12,class:'cd'+(l.c?'':' ph')},c);el('text',{class:'ct','text-anchor':'middle',y:5},c,l.c||'?')});
@@ -42,10 +58,10 @@ function drawREL(g){const R=S.rel;
   if(a.ty){sym(q,ex,ey,ed,a.ty=='NM'?'many':'one',c);sym(q,sx,sy,sd,a.ty=='11'?'one':'many',c)}
   else{el('path',{d:`M${ex} ${ey}l${-ed*9} -5v10z`,fill:'var(--ac)'},q);const p=el('g',{transform:`translate(${mx} ${(sy+ey)/2})`},q);el('rect',{x:-17,y:-12,width:34,height:24,rx:12,class:'cd ph'},p);el('text',{class:'ct','text-anchor':'middle',y:5},p,'?')}});
  R.tabs.forEach(t=>{const H=52+26*(t.rows.length+1),q=el('g',{},g);el('rect',{x:t.x,y:t.y,width:W,height:H,rx:6,class:'tb'},q);
-  const h=el('g',{'data-k':'tbl','data-id':t.id,class:'hit nd'+(S.sel==t.id?' sel':'')},q);el('rect',{x:t.x,y:t.y,width:W,height:30,rx:6,class:'th'},h);el('text',{x:t.x+12,y:t.y+20,class:'b'},h,t.name);
+  const h=el('g',{'data-k':'tbl','data-id':t.id,class:'hit nd'+(S.sel==t.id?' sel':'')},q);el('rect',{x:t.x,y:t.y,width:W,height:30,rx:6,class:'th'},h);textoAjustado({x:t.x+12,y:t.y+20,class:'b'},h,t.name,W-24);
   el('rect',{x:t.x+1,y:t.y+30,width:W-2,height:22,fill:'var(--bg)'},q);[['Campo',12],['Tipo',104],['Clave',190]].forEach(([s,o])=>el('text',{x:t.x+o,y:t.y+45,class:'cn'},q,s));
   t.rows.forEach((r,i)=>{const y=t.y+52+26*i,a={'data-id':t.id,'data-i':i,class:'hit'};el('rect',Object.assign({x:t.x,y,width:W,height:26,fill:'transparent'},a),q);
-   el('text',Object.assign({x:t.x+12,y:y+17,'data-k':'ncell'},a,{class:'hit'+(r.k.includes('PK')?' u':'')}),q,r.n);el('text',Object.assign({x:t.x+104,y:y+17,'data-k':'tcell',fill:'var(--mu)'},a),q,r.t);
+   textoAjustado(Object.assign({x:t.x+12,y:y+17,'data-k':'ncell'},a,{class:'hit'+(r.k.includes('PK')?' u':'')}),q,r.n,86);el('text',Object.assign({x:t.x+104,y:y+17,'data-k':'tcell',fill:'var(--mu)'},a),q,r.t);
    const kc=el('g',Object.assign({'data-k':'kcell'},a),q);if(!r.k.length){el('rect',{x:t.x+190,y:y+5,width:24,height:16,rx:4,class:'ky f','stroke-dasharray':'3 2'},kc);el('text',{x:t.x+202,y:y+17,'text-anchor':'middle',class:'kt'},kc,'+')}
    r.k.forEach((k,j)=>{const x=t.x+190+28*j;el('rect',{x,y:y+5,width:24,height:16,rx:4,class:'ky'+(k=='PK'?'':' f')},kc);el('text',{x:x+12,y:y+17,'text-anchor':'middle',class:'kt'},kc,k)});
    if(r.k.includes('FK'))el('circle',{cx:t.x+W,cy:y+13,r:6,class:'fl','data-k':'fkh','data-id':t.id,'data-i':i,style:'cursor:crosshair'},q)});
@@ -92,20 +108,20 @@ cv.addEventListener('click',e=>{if(J)return;const t=e.target.closest('[data-k]')
  else if(k=='kcell')ctx(t,e.clientX,e.clientY);else if(k=='arrow')ctx(t,e.clientX,e.clientY);
  else if(k=='addrow'){tab(id).rows.push({n:'campo',t:'VARCHAR(50)',k:[]});draw()}});
 cv.addEventListener('dblclick',e=>{const t=(document.elementFromPoint(e.clientX,e.clientY)||e.target).closest('[data-k]');if(!t)return;const k=t.dataset.k,id=t.dataset.id,i=+t.dataset.i;
- if(['ent','rel','tbl'].includes(k)){const n=find(k,id);ask('Nombre',n.name,v=>{n.name=v;draw()})}
- else if(k=='attr'){const a=find('ent',id).attrs[i];ask('Nombre del atributo',a.n,v=>{a.n=v;draw()})}
- else if(k=='ncell'){const r=tab(id).rows[i];ask('Nombre del campo',r.n,v=>{r.n=v;draw()})}
+ if(['ent','rel','tbl'].includes(k)){const n=find(k,id);askNombre('Nombre',n.name,v=>{n.name=v;draw()})}
+ else if(k=='attr'){const a=find('ent',id).attrs[i];askNombre('Nombre del atributo',a.n,v=>{a.n=v;draw()})}
+ else if(k=='ncell'){const r=tab(id).rows[i];askNombre('Nombre del campo',r.n,v=>{r.n=v;draw()})}
  else if(k=='note'){const n=find('note',id);ask('Texto de la nota',n.text,v=>{n.text=v;draw()})}});
 cv.addEventListener('contextmenu',e=>{e.preventDefault();const t=e.target.closest('[data-k]');if(t)ctx(t,e.clientX,e.clientY)});
 function ctx(t,x,y){const k=t.dataset.k,id=t.dataset.id,i=+t.dataset.i,E=S.er,R=S.rel,it=[],del=(f)=>it.push(['Eliminar',f,1]);
- const rn=(n,tt)=>it.push(['Renombrar',()=>ask('Nombre',n.name,v=>{n.name=v;draw()})]);
+ const rn=(n,tt)=>it.push(['Renombrar',()=>askNombre('Nombre',n.name,v=>{n.name=v;draw()})]);
  const nt=tg=>it.push(['Añadir nota',()=>ask('Texto de la nota','',v=>{const p=find(tg.k,tg.id);E.notes.push({id:uid(),x:p.x+90,y:p.y+(tg.k=='ent'?150:60),text:v,t:tg.id});draw()})]);
- if(k=='ent'){const n=find('ent',id);rn(n);AK.forEach(([a,nm])=>it.push(['+ '+nm,()=>ask('Nombre del atributo','',v=>{n.attrs.push({n:v,k:a});draw()})]));
+ if(k=='ent'){const n=find('ent',id);rn(n);AK.forEach(([a,nm])=>it.push(['+ '+nm,()=>askNombre('Nombre del atributo','',v=>{n.attrs.push({n:v,k:a});draw()})]));
   E.rels.forEach(r=>{if(!E.links.some(l=>l.e==id&&l.r==r.id))it.push(['Asociar con: '+r.name,()=>{E.links.push({id:uid(),e:id,r:r.id,c:null});draw()}])});nt({k,id});
   del(()=>{E.ents=E.ents.filter(a=>a.id!=id);E.links=E.links.filter(l=>l.e!=id);E.notes=E.notes.filter(a=>a.t!=id);draw()})}
  else if(k=='rel'){const n=find('rel',id);rn(n);E.ents.forEach(e=>{if(!E.links.some(l=>l.e==e.id&&l.r==id))it.push(['Asociar con: '+e.name,()=>{E.links.push({id:uid(),e:e.id,r:id,c:null});draw()}])});nt({k,id});
   del(()=>{E.rels=E.rels.filter(a=>a.id!=id);E.links=E.links.filter(l=>l.r!=id);E.notes=E.notes.filter(a=>a.t!=id);draw()})}
- else if(k=='attr'){const e=find('ent',id),a=e.attrs[i];it.push(['Renombrar',()=>ask('Nombre del atributo',a.n,v=>{a.n=v;draw()})]);AK.forEach(([c,nm])=>it.push([(a.k==c?'✓ ':'')+nm,()=>{a.k=c;draw()}]));del(()=>{e.attrs.splice(i,1);draw()})}
+ else if(k=='attr'){const e=find('ent',id),a=e.attrs[i];it.push(['Renombrar',()=>askNombre('Nombre del atributo',a.n,v=>{a.n=v;draw()})]);AK.forEach(([c,nm])=>it.push([(a.k==c?'✓ ':'')+nm,()=>{a.k=c;draw()}]));del(()=>{e.attrs.splice(i,1);draw()})}
  else if(k=='note'){const n=find('note',id);it.push(['Editar texto',()=>ask('Texto de la nota',n.text,v=>{n.text=v;draw()})]);del(()=>{E.notes=E.notes.filter(a=>a.id!=id);draw()})}
  else if(k=='card'){const l=E.links.find(a=>a.id==id);['1','N','M'].forEach(c=>it.push([(l.c==c?'✓ ':'')+'Cardinalidad '+c,()=>{l.c=c;draw()}]));it.push(['Sin elegir',()=>{l.c=null;draw()}]);it.push(['Eliminar asociación',()=>{E.links=E.links.filter(a=>a.id!=id);draw()},1])}
  else if(k=='tbl'){const n=find('tbl',id);rn(n);del(()=>{R.tabs=R.tabs.filter(a=>a.id!=id);R.arrows=R.arrows.filter(a=>a.f[0]!=id&&a.t[0]!=id);draw()})}
@@ -160,10 +176,10 @@ function io(){const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl">Imp
  $('#ap').onclick=()=>{try{const j=JSON.parse(ta.value),E=j.er,R=j.rel;if(!E||!R||!Array.isArray(E.ents)||!Array.isArray(E.rels)||!Array.isArray(E.links)||!Array.isArray(R.tabs)||!Array.isArray(R.arrows))throw 0;E.notes=Array.isArray(E.notes)?E.notes:[];S.er=E;S.rel=R;S.exc=Array.isArray(j.exc)?j.exc:[];S.sel=null;d.style.display='none';draw()}catch(e){$('#ms').textContent='El archivo no tiene el formato esperado.'}}}
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,v=t.dataset.v,c=spot(S.er.ents.length+S.er.rels.length+S.rel.tabs.length);
  if(a=='tab'){S.tab=v;S.sel=null;draw()}else if(a=='lv'){S.level=v;draw()}
- else if(a=='ent')ask('Nombre de la entidad','Entidad',n=>{S.er.ents.push({id:uid(),x:c.x,y:c.y,name:n,attrs:[]});draw()});
- else if(a=='rel')ask('Nombre de la relación','Relación',n=>{S.er.rels.push({id:uid(),x:c.x,y:c.y,name:n});draw()});
+ else if(a=='ent')askNombre('Nombre de la entidad','Entidad',n=>{S.er.ents.push({id:uid(),x:c.x,y:c.y,name:n,attrs:[]});draw()});
+ else if(a=='rel')askNombre('Nombre de la relación','Relación',n=>{S.er.rels.push({id:uid(),x:c.x,y:c.y,name:n});draw()});
  else if(a=='note')ask('Texto de la nota','',n=>{S.er.notes.push({id:uid(),x:c.x,y:c.y,text:n,t:S.sel&&(find('ent',S.sel)||find('rel',S.sel))?S.sel:null});draw()});
- else if(a=='tbl')ask('Nombre de la tabla','TABLA',n=>{S.rel.tabs.push({id:uid(),x:c.x-100,y:c.y-60,name:n,rows:[{n:'id',t:'INT',k:['PK']}]});draw()});
+ else if(a=='tbl')askNombre('Nombre de la tabla','TABLA',n=>{S.rel.tabs.push({id:uid(),x:c.x-100,y:c.y-60,name:n,rows:[{n:'id',t:'INT',k:['PK']}]});draw()});
  else if(a=='gen'){if(S.rel.tabs.length)ask('Ya hay tablas. Escribe «sí» para reemplazarlas','',x=>{if(/^s[ií]/i.test(x))gen()});else gen()}
  else if(a=='undo')hist(-1);else if(a=='redo')hist(1);else if(a=='io')io();else if(a=='xd'){S.exc.splice(+v,1);draw()}
  else if(a=='xa')ask('Excepción (se asocia a: '+selName()+')','',x=>{S.exc.push({tag:selName(),text:x});draw()})});

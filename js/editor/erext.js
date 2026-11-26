@@ -11,21 +11,21 @@
    if(r.ident&&g)el('polygon',{points:`${r.x},${r.y-28} ${r.x+49},${r.y} ${r.x},${r.y+28} ${r.x-49},${r.y}`,class:'sh',style:'fill:none'},g);
    (r.attrs||[]).forEach((a,i,A)=>{const o=i-(A.length-1)/2,cx=r.x+o*38,cy=r.y+72,w=el('g',{'data-k':'rattr','data-id':r.id,'data-i':i,class:'hit'},cv);
     el('path',{d:`M${r.x+o*16} ${r.y+26}L${cx} ${cy-8}`,class:'ln'},w);circ(w,cx,cy,a.k);
-    el('text',{transform:`translate(${cx+4} ${cy+(a.k=='multi'?20:18)}) rotate(-45)`,'text-anchor':'end'},w,nombreAtributo(a))})})};
+    textoAjustado({transform:`translate(${cx+4} ${cy+(a.k=='multi'?20:18)}) rotate(-45)`,'text-anchor':'end'},w,nombreAtributo(a),140)})})};
  /* Menús: atributos de relación, y marcar entidad débil / relación identificadora */
  const ctx1=ctx;ctx=function(t,x,y){const k=t.dataset.k,E=S.er,id=t.dataset.id;
   if(k=='rattr'){const r=E.rels.find(z=>z.id==id),i=+t.dataset.i,a=r&&(r.attrs||[])[i];if(!a)return;
-   const it=[['Renombrar',()=>ask('Nombre del atributo',a.n,v=>{a.n=v;draw()})]];RK.forEach(([c,nm])=>it.push([(a.k==c?'✓ ':'')+nm,()=>{a.k=c;draw()}]));
+   const it=[['Renombrar',()=>askNombre('Nombre del atributo',a.n,v=>{a.n=v;draw()})]];RK.forEach(([c,nm])=>it.push([(a.k==c?'✓ ':'')+nm,()=>{a.k=c;draw()}]));
    it.push(['Eliminar',()=>{r.attrs.splice(i,1);draw()},1]);return menu(x,y,it)}
   if(k!='ent'&&k!='rel')return ctx1(t,x,y);
   const m0=menu;menu=function(px,py,it){menu=m0;const add=[];
    if(k=='ent'){const n=E.ents.find(z=>z.id==id);if(n)add.push([n.weak?'✓ Entidad débil (quitar)':'Marcar como entidad débil',()=>{n.weak=!n.weak;draw()}])}
-   else{const r=E.rels.find(z=>z.id==id);if(r){add.push(['+ Atributo de la relación',()=>ask('Nombre del atributo','',v=>{(r.attrs=r.attrs||[]).push({n:v,k:'attr'});draw()})]);
+   else{const r=E.rels.find(z=>z.id==id);if(r){add.push(['+ Atributo de la relación',()=>askNombre('Nombre del atributo','',v=>{(r.attrs=r.attrs||[]).push({n:v,k:'attr'});draw()})]);
     add.push([r.ident?'✓ Relación identificadora (quitar)':'Marcar como relación identificadora',()=>{r.ident=!r.ident;draw()}])}}
    it.splice(Math.max(0,it.length-1),0,...add);m0(px,py,it)};
   try{ctx1(t,x,y)}finally{menu=m0}};
  cv.addEventListener('dblclick',e=>{const t=(document.elementFromPoint(e.clientX,e.clientY)||e.target).closest('[data-k=rattr]');if(!t)return;
-  const r=S.er.rels.find(z=>z.id==t.dataset.id),a=r&&(r.attrs||[])[+t.dataset.i];if(a)ask('Nombre del atributo',a.n,v=>{a.n=v;draw()})});
+  const r=S.er.rels.find(z=>z.id==t.dataset.id),a=r&&(r.attrs||[])[+t.dataset.i];if(a)askNombre('Nombre del atributo',a.n,v=>{a.n=v;draw()})});
  /* Una entidad débil no necesita clave primaria, sino clave parcial y relación identificadora */
  const ck=checks;checks=function(){let o=ck();if(S.tab!='er')return o;const E=S.er;
   E.ents.filter(e=>e.weak).forEach(e=>{o=o.filter(c=>!c[1].startsWith(e.name+': falta la clave primaria')&&!c[1].startsWith(e.name+': tiene clave primaria'));
