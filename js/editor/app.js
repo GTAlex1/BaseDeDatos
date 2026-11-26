@@ -81,6 +81,16 @@ function checks(){const o=[],E=S.er,R=S.rel;
    t.rows.forEach((r,i)=>{if(r.k.includes('FK')&&!R.arrows.some(a=>a.f[0]==t.id&&a.f[1]==i))o.push([false,t.name+'.'+r.n+': FK sin flecha','Arrastra desde el punto de la FK hasta su PK.'])})});
   R.arrows.forEach(a=>{if(!a.ty)o.push([false,'Hay una flecha sin tipo','Clic derecho en la flecha y elige 1:1, 1:N o N:M.'])})}
  return o}
+function excepcionRepetida(excepciones,nueva){
+ const normalizar=texto=>String(texto??'').normalize('NFC').trim().replace(/\s+/g,' ').toLocaleLowerCase('es');
+ const texto=normalizar(nueva.text);
+ return excepciones.some(anterior=>{
+  const mismoElemento=Object.hasOwn(anterior,'elementId')
+   ? anterior.elementId===nueva.elementId
+   : normalizar(anterior.tag)===normalizar(nueva.tag);
+  return mismoElemento&&normalizar(anterior.text)===texto;
+ });
+}
 function selName(){const n=find('ent',S.sel)||find('rel',S.sel)||find('tbl',S.sel);return n?n.name:'General'}
 function side(){let h='<p class="lbl" style="margin:0">Verificación</p>';
  if(S.level=='practice')h+='<p class="mu">Modo práctica: el lienzo no valida nada. Tú haces todo.</p>';
@@ -182,6 +192,15 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t
  else if(a=='tbl')askNombre('Nombre de la tabla','TABLA',n=>{S.rel.tabs.push({id:uid(),x:c.x-100,y:c.y-60,name:n,rows:[{n:'id',t:'INT',k:['PK']}]});draw()});
  else if(a=='gen'){if(S.rel.tabs.length)ask('Ya hay tablas. Escribe «sí» para reemplazarlas','',x=>{if(/^s[ií]/i.test(x))gen()});else gen()}
  else if(a=='undo')hist(-1);else if(a=='redo')hist(1);else if(a=='io')io();else if(a=='xd'){S.exc.splice(+v,1);draw()}
- else if(a=='xa')ask('Excepción (se asocia a: '+selName()+')','',x=>{S.exc.push({tag:selName(),text:x});draw()})});
+ else if(a=='xa'){
+  const tag=selName(),elementId=S.sel??null;
+  ask('Excepción (se asocia a: '+tag+')','',text=>{
+   if(excepcionRepetida(S.exc,{tag,elementId,text})){
+    alert('Esta excepción ya existe para '+tag+'.');
+    return;
+   }
+   S.exc.push({tag,elementId,text});draw();
+  });
+ }});
 document.addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;const k=e.key.toLowerCase();if((e.ctrlKey||e.metaKey)&&(k=='z'||k=='y')){e.preventDefault();hist(k=='y'||e.shiftKey?1:-1)}});
 draw();
