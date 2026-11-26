@@ -109,7 +109,7 @@ function ctx(t,x,y){const k=t.dataset.k,id=t.dataset.id,i=+t.dataset.i,E=S.er,R=
  else if(k=='note'){const n=find('note',id);it.push(['Editar texto',()=>ask('Texto de la nota',n.text,v=>{n.text=v;draw()})]);del(()=>{E.notes=E.notes.filter(a=>a.id!=id);draw()})}
  else if(k=='card'){const l=E.links.find(a=>a.id==id);['1','N','M'].forEach(c=>it.push([(l.c==c?'✓ ':'')+'Cardinalidad '+c,()=>{l.c=c;draw()}]));it.push(['Sin elegir',()=>{l.c=null;draw()}]);it.push(['Eliminar asociación',()=>{E.links=E.links.filter(a=>a.id!=id);draw()},1])}
  else if(k=='tbl'){const n=find('tbl',id);rn(n);del(()=>{R.tabs=R.tabs.filter(a=>a.id!=id);R.arrows=R.arrows.filter(a=>a.f[0]!=id&&a.t[0]!=id);draw()})}
- else if(k=='ncell'||k=='tcell'||k=='kcell'){const tb=tab(id),r=tb.rows[i];if(k=='kcell')[['PK','Clave primaria'],['FK','Clave foránea'],['UQ','Clave alternativa'],...(!r.k.includes('PK')?[['NULL','Atributo opcional']]:[])].forEach(([c,nm])=>it.push([(r.k.includes(c)?'✓ ':'')+nm+' ('+c+')',()=>{r.k=r.k.includes(c)?r.k.filter(z=>z!=c):r.k.filter(z=>c!=='PK'||z!=='NULL').concat(c);draw()}]));
+ else if(k=='ncell'||k=='tcell'||k=='kcell'){const tb=tab(id),r=tb.rows[i];if(k=='kcell')[['PK','Clave primaria'],['FK','Clave foránea'],['UQ','Clave alternativa'],...(!r.k.includes('PK')?[['NULL','Atributo opcional'],['NN','Atributo obligatorio']]:[])].forEach(([c,nm])=>it.push([(r.k.includes(c)?'✓ ':'')+nm+' ('+c+')',()=>{r.k=r.k.includes(c)?r.k.filter(z=>z!=c):r.k.filter(z=>!((c==='PK'||c==='NN')&&z==='NULL'||c==='NULL'&&z==='NN')).concat(c);draw()}]));
   it.push(['Eliminar campo',()=>{tb.rows.splice(i,1);R.arrows=R.arrows.filter(a=>!((a.f[0]==id&&a.f[1]==i)||(a.t[0]==id&&a.t[1]==i))).map(a=>{[a.f,a.t].forEach(p=>{if(p[0]==id&&p[1]>i)p[1]--});return a});draw()},1])}
  else if(k=='arrow'){const a=R.arrows.find(z=>z.id==id);[['11','1:1 · uno a uno'],['1N','1:N · uno a muchos'],['NM','N:M · muchos a muchos']].forEach(([c,nm])=>it.push([(a.ty==c?'✓ ':'')+nm,()=>{a.ty=c;draw()}]));it.push(['Eliminar flecha',()=>{R.arrows=R.arrows.filter(z=>z.id!=id);draw()},1])}
  if(it.length)menu(x,y,it)}
@@ -120,10 +120,39 @@ function gen(){const E=S.er,T=[],A=[],m={};let n=0;const mk=(name,rows)=>{const 
  E.rels.forEach(r=>{const L=E.links.filter(l=>l.r==r.id);if(L.length!=2||L.some(l=>!l.c||!m[l.e]))return;const[a,b]=L,x=m[a.e],y=m[b.e];
   if(a.c!='1'&&b.c!='1'){const c=mk(r.name.toUpperCase(),[]);fk(c,x,'1N',1);fk(c,y,'1N',1)}else if(a.c=='1'&&b.c!='1')fk(y,x,'1N');else if(b.c=='1'&&a.c!='1')fk(x,y,'1N');else fk(x,y,'11')});
  S.rel={tabs:T,arrows:A};S.tab='rel';draw()}
-function sql(){const id=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\W+/g,'_').toLowerCase(),T=S.rel.tabs;
- const c=T.map(t=>{const pk=t.rows.filter(r=>r.k.includes('PK')).map(r=>id(r.n)),L=t.rows.map(r=>'  '+id(r.n)+' '+r.t+(r.k.includes('NULL')&&!r.k.includes('PK')?' NULL':'')+(r.k.includes('UQ')?' UNIQUE':''));if(pk.length)L.push('  PRIMARY KEY ('+pk.join(', ')+')');return 'CREATE TABLE '+id(t.name)+' (\n'+L.join(',\n')+'\n);'});
- const f=S.rel.arrows.map(a=>{const x=tab(a.f[0]),y=tab(a.t[0]);return x&&y?'ALTER TABLE '+id(x.name)+' ADD FOREIGN KEY ('+id(x.rows[a.f[1]].n)+') REFERENCES '+id(y.name)+' ('+id(y.rows[a.t[1]].n)+');':''}).filter(Boolean);
- return c.concat(f).join('\n\n')||'-- Aún no hay tablas en el esquema relacional.'}
+function sql(){
+ const id=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\W+/g,'_').toLowerCase();
+ const tables=S.rel.tabs,groups=new Map();
+ for(const arrow of S.rel.arrows){
+  const from=tab(arrow.f[0]),to=tab(arrow.t[0]);
+  if(!from?.rows[arrow.f[1]]||!to?.rows[arrow.t[1]])continue;
+  const key=arrow.fkGroup?JSON.stringify([arrow.fkGroup,from.id,to.id]):arrow;
+  if(!groups.has(key))groups.set(key,{from,to,arrows:[]});
+  groups.get(key).arrows.push(arrow);
+ }
+ const unique=new Map(),foreign=[];
+ for(const {from,to,arrows} of groups.values()){
+  const source=arrows.map(a=>id(from.rows[a.f[1]].n)).join(', ');
+  const target=arrows.map(a=>id(to.rows[a.t[1]].n)).join(', ');
+  if(arrows.every(a=>a.ty==='11')){
+   if(!unique.has(from.id))unique.set(from.id,new Set());
+   unique.get(from.id).add(source);
+  }
+  foreign.push('ALTER TABLE '+id(from.name)+' ADD FOREIGN KEY ('+source+') REFERENCES '+id(to.name)+' ('+target+');');
+ }
+ const create=tables.map(t=>{
+  const pk=t.rows.filter(r=>r.k.includes('PK')).map(r=>id(r.n));
+  const lines=t.rows.map(r=>'  '+id(r.n)+' '+r.t+
+   (r.k.includes('NN')?' NOT NULL':r.k.includes('NULL')&&!r.k.includes('PK')?' NULL':'')+
+   (r.k.includes('UQ')?' UNIQUE':''));
+  if(pk.length)lines.push('  PRIMARY KEY ('+pk.join(', ')+')');
+  for(const fields of unique.get(t.id)||[]){
+   if(fields!==pk.join(', ')&&!t.rows.some(r=>id(r.n)===fields&&r.k.includes('UQ')))lines.push('  UNIQUE ('+fields+')');
+  }
+  return 'CREATE TABLE '+id(t.name)+' (\n'+lines.join(',\n')+'\n);';
+ });
+ return create.concat(foreign).join('\n\n')||'-- Aún no hay tablas en el esquema relacional.';
+}
 function io(){const d=$('#dlg');d.innerHTML='<div class="box"><p class="lbl">Importar / exportar (JSON)</p><textarea id="ta" spellcheck="false"></textarea><input type="file" id="fi" accept=".json,application/json"><div class="row"><button class="btn" id="cp">Copiar</button><button class="btn" id="js">JSON</button><button class="btn" id="sq">SQL</button><button class="btn pri" id="ap">Importar</button><button class="btn" id="cl">Cerrar</button></div><p class="mu" id="ms"></p></div>';d.style.display='flex';
  const ta=$('#ta');ta.value=JSON.stringify({v:1,level:S.level,er:S.er,rel:S.rel,exc:S.exc},null,1);$('#cl').onclick=()=>d.style.display='none';$('#sq').onclick=()=>{ta.value=sql();$('#ms').textContent='SQL generado desde el esquema relacional.'};$('#js').onclick=()=>{ta.value=JSON.stringify({v:1,level:S.level,er:S.er,rel:S.rel,exc:S.exc},null,1);$('#ms').textContent=''};
  $('#cp').onclick=async()=>{try{await navigator.clipboard.writeText(ta.value);$('#ms').textContent='Copiado.'}catch(e){ta.select();$('#ms').textContent='Selecciona y copia manualmente.'}};
