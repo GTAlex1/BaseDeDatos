@@ -11,6 +11,7 @@
  $('#ttl').value=doc.title;document.title=doc.title+' · UML';
 
  let M={els:Array.isArray(d0.els)?d0.els:[],rels:Array.isArray(d0.rels)?d0.rels:[]},sel=null,mode=null,src=null,V={x:0,y:0,k:1},D=null,H=[],HI=-1,LP=0;
+ let copiedElement=null,pasteOffset=0;
  const cv=$('#cv'),find=i=>M.els.find(e=>e.id==i);
  const UC=[['assoc','Asociación'],['incl','«include» (incluye)'],['ext','«extend» (extiende)'],['inh','Generalización']];
  const CL=[['assoc','Asociación'],['nav','Asociación dirigida →'],['dep','Dependencia'],['inh','Herencia (hacia la clase padre)'],['real','Realización (implementa la interfaz)'],['agg','Agregación (rombo en el origen)'],['comp','Composición (rombo en el origen)']];
@@ -45,6 +46,13 @@
  const spot=()=>{const r=cv.getBoundingClientRect(),n=M.els.length;return{x:Math.round((r.width/2-V.x)/V.k-75+(n*37)%120-60),y:Math.round((r.height/2-V.y)/V.k-40+(n*53)%100-50)}};
  function addEl(t,name,extra){const p=spot(),e=Object.assign({id:uid(),t,x:p.x,y:p.y,name},extra||{});M.els.push(e);sel=e.id;draw();return e}
 
+ function duplicateElement(source,offset){
+  const copy=JSON.parse(JSON.stringify(source));
+  do{copy.id=uid()}while(find(copy.id)||M.rels.some(r=>r.id===copy.id));
+  copy.x+=offset;copy.y+=offset;
+  M.els.push(copy);sel=copy.id;draw();
+ }
+
  function editClass(e){const d=$('#dlg');
   d.innerHTML='<div class="box"><p class="lbl">Clase</p><input id="un" maxlength="80" placeholder="Nombre"><input id="us" list="usl" maxlength="30" placeholder="Estereotipo (opcional): abstract, interface, enum, entity…"><datalist id="usl"><option value="abstract"><option value="interface"><option value="enum"><option value="entity"><option value="utility"></datalist><p class="lbl" style="margin:0">Atributos (uno por línea, p. ej. - nombre: String)</p><textarea id="ua" spellcheck="false" style="height:90px"></textarea><p class="lbl" style="margin:0">Métodos (uno por línea, p. ej. + calcular(): int)</p><textarea id="um" spellcheck="false" style="height:90px"></textarea><p class="mu">Visibilidad: + público, - privado, # protegido, ~ paquete. Añade {static} para subrayar un miembro estático y {abstract} para ponerlo en cursiva.</p><div class="row"><button class="btn" id="uc">Cancelar</button><button class="btn pri" id="uo">Aceptar</button></div></div>';d.style.display='flex';
   $('#un').value=e.name;$('#us').value=e.st||'';$('#ua').value=(e.attrs||[]).join('\n');$('#um').value=(e.meths||[]).join('\n');$('#un').focus();
@@ -66,7 +74,7 @@
   it.push([e.t=='class'?'Editar clase':'Renombrar',()=>rename(e)]);
   if(e.t!='sys')it.push(['Conectar desde aquí',()=>{mode=true;src=e.id;sel=e.id;draw(true)}]);
   if(box(e))it.push(['Tamaño…',()=>ask('Ancho x alto (p. ej. 400x300)',Math.round(e.w)+'x'+Math.round(e.h),v=>{const m=v.match(/(\d+)\D+(\d+)/);if(m){e.w=Math.max(120,+m[1]);e.h=Math.max(80,+m[2]);draw()}})]);
-  it.push(['Duplicar',()=>{const c=JSON.parse(JSON.stringify(e));c.id=uid();c.x+=30;c.y+=30;M.els.push(c);sel=c.id;draw()}]);it.push(['Eliminar',()=>del(e.id),1]);menu(x,y,it)}
+  it.push(['Duplicar',()=>duplicateElement(e,30)]);it.push(['Eliminar',()=>del(e.id),1]);menu(x,y,it)}
  function pick(e,ev){if(e.t=='sys')return;if(!src){src=e.id;sel=e.id;draw(true);return}const a=find(src);mode=null;src=null;typeMenu(a,e,ev.clientX,ev.clientY);draw(true)}
 
  /* Interacción: mover elementos, desplazar el lienzo y zoom con la rueda */
@@ -121,8 +129,15 @@
   else if(a=='class'){editClass(addEl('class','Clase',{st:'',attrs:[],meths:[]}))}
   else if(a=='iface'){editClass(addEl('class','Interfaz',{st:'interface',attrs:[],meths:[]}))}
   else{const T={actor:'Actor',uc:'Caso de uso',sys:'Sistema',pkg:'Paquete',note:'Nota'};ask(a=='note'?'Texto de la nota':'Nombre',T[a],v=>{if(v)addEl(a,v)})}});
- addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea,select'))return;const d=$('#dlg');if(d&&d.style.display=='flex')return;const k=e.key.toLowerCase();
-  if((e.ctrlKey||e.metaKey)&&(k=='z'||k=='y')){e.preventDefault();hist(k=='y'||e.shiftKey?1:-1)}
+ addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]'))return;const d=$('#dlg');if(d&&d.style.display=='flex')return;const k=e.key.toLowerCase();
+  if((e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey&&k==='c'&&find(sel)&&!mode&&!D){
+   e.preventDefault();
+   copiedElement=JSON.parse(JSON.stringify(find(sel)));pasteOffset=0;
+  }else if((e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey&&k==='v'&&copiedElement&&!mode&&!D){
+   e.preventDefault();
+   if(!e.repeat){pasteOffset+=30;duplicateElement(copiedElement,pasteOffset)}
+  }
+  else if((e.ctrlKey||e.metaKey)&&(k=='z'||k=='y')){e.preventDefault();hist(k=='y'||e.shiftKey?1:-1)}
   else if((k=='delete'||k=='backspace')&&sel){e.preventDefault();del(sel)}else if(k=='escape'){mode=null;src=null;draw(true)}});
 
  snap();draw(true);ok();setInterval(flush,1200);
